@@ -16,6 +16,10 @@ fi
 mkdir -p Gqrx.app/Contents/MacOS
 mkdir -p Gqrx.app/Contents/Resources
 mkdir -p Gqrx.app/Contents/soapy-modules
+mkdir -p Gqrx.app/Contents/Resources/licenses/qt-translations
+cp translations/qtbase/README.md translations/qtbase/README.upstream \
+    translations/qtbase/LICENSE.GPL3-EXCEPT \
+    Gqrx.app/Contents/Resources/licenses/qt-translations/
 
 /bin/cat <<EOM >Gqrx.app/Contents/Info.plist
 <?xml version="1.0" encoding="UTF-8"?>

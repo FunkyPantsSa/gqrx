@@ -109,6 +109,12 @@ RESULT=$?
 # copy Soapy modules into their expected path in the AppDir
 cp -R "$PREFIX"/lib/SoapySDR ./AppDir/usr/lib/SoapySDR
 
+# Keep the bundled Qt translation's attribution and license with the app.
+mkdir -p ./AppDir/usr/share/doc/gqrx/translations
+cp translations/qtbase/README.md translations/qtbase/README.upstream \
+    translations/qtbase/LICENSE.GPL3-EXCEPT \
+    ./AppDir/usr/share/doc/gqrx/translations/
+
 # copy fontconfig configuration files that the FONTCONFIG_FILE env var points to
 mkdir -p ./AppDir/etc/
 cp -RL "$PREFIX"/etc/fonts ./AppDir/etc/fonts

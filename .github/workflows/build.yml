@@ -344,6 +344,12 @@ jobs:
           libzstd.dll \
           zlib1.dll \
           C:/gqrx/bin/
+    - name: Include translation notices
+      run: |
+        mkdir -p C:/gqrx/bin/licenses/qt-translations
+        cp translations/qtbase/README.md translations/qtbase/README.upstream \
+          translations/qtbase/LICENSE.GPL3-EXCEPT \
+          C:/gqrx/bin/licenses/qt-translations/
     - name: Save artifact
       uses: actions/upload-artifact@v7
       with:

@@ -14,17 +14,35 @@ execute_process(COMMAND "${QMAKE_EXECUTABLE}" -query QT_INSTALL_TRANSLATIONS
 find_file(QTBASE_ZH_CN_QM qtbase_zh_CN.qm
     HINTS "${QT_TRANSLATIONS_DIR}"
     DOC "Qt Simplified Chinese catalog for standard buttons and dialogs")
-if(NOT QTBASE_ZH_CN_QM)
-    message(FATAL_ERROR "qtbase_zh_CN.qm not found. Install Qt translations (qttranslations5-l10n or qt6-translations-l10n).")
+set(GQRX_TRANSLATION_DEPENDENCIES ${GQRX_QM_FILES})
+if(QTBASE_ZH_CN_QM AND EXISTS "${QTBASE_ZH_CN_QM}")
+    set(GQRX_QTBASE_QM_FILE "${QTBASE_ZH_CN_QM}")
+    message(STATUS "Using installed Qt Chinese translations: ${QTBASE_ZH_CN_QM}")
+else()
+    # Some distributions ship Qt translations without Simplified Chinese.
+    # Use the checked-in Qt 5.15 source with this build's lrelease, without
+    # downloading anything during configuration or changing the app catalog.
+    set(GQRX_QTBASE_TS_FILE "${CMAKE_CURRENT_SOURCE_DIR}/qtbase/qtbase_zh_CN.ts")
+    if(Qt6_FOUND)
+        qt_add_translation(GQRX_QTBASE_QM_FILES "${GQRX_QTBASE_TS_FILE}" OPTIONS -nounfinished)
+    else()
+        qt5_add_translation(GQRX_QTBASE_QM_FILES "${GQRX_QTBASE_TS_FILE}" OPTIONS -nounfinished)
+    endif()
+    set(GQRX_QTBASE_QM_FILE "${GQRX_QTBASE_QM_FILES}")
+    list(APPEND GQRX_TRANSLATION_DEPENDENCIES ${GQRX_QTBASE_QM_FILES})
+    message(STATUS "Qt Chinese translations not installed; compiling bundled Qt 5.15 catalog")
 endif()
 
 set(GQRX_TRANSLATION_QRC "${CMAKE_CURRENT_BINARY_DIR}/translations.qrc")
 file(WRITE "${GQRX_TRANSLATION_QRC}"
     "<RCC><qresource prefix=\"/translations\">\n"
     "<file alias=\"gqrx_zh_CN.qm\">${GQRX_QM_FILES}</file>\n"
-    "<file alias=\"qtbase_zh_CN.qm\">${QTBASE_ZH_CN_QM}</file>\n"
+    "<file alias=\"qtbase_zh_CN.qm\">${GQRX_QTBASE_QM_FILE}</file>\n"
     "</qresource></RCC>\n")
-add_custom_target(gqrx_translations DEPENDS ${GQRX_QM_FILES})
+add_custom_target(gqrx_translations DEPENDS ${GQRX_TRANSLATION_DEPENDENCIES})
+
+install(FILES qtbase/LICENSE.GPL3-EXCEPT qtbase/README.md qtbase/README.upstream
+    DESTINATION share/doc/gqrx/translations)
 
 # Explicit maintenance target: regular builds never rewrite the source catalog.
 if(Qt6_FOUND)
