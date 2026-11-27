@@ -22,6 +22,7 @@
  */
 #include <Qt>
 #include <QFile>
+#include <QCoreApplication>
 #include <QResource>
 #include <QStringList>
 #include <QTextStream>
@@ -30,6 +31,72 @@
 #include <algorithm>
 #include <iostream>
 #include "bandplan.h"
+
+namespace {
+// The built-in plan contains historical allocations (not a China band plan).
+// Only rows matching the shipped file are translated; user labels are data.
+const char * const bandNames[] = {
+    QT_TRANSLATE_NOOP("BandPlan", "1.25m Ham Band"),
+    QT_TRANSLATE_NOOP("BandPlan", "10m CW/Data Ham Band"),
+    QT_TRANSLATE_NOOP("BandPlan", "10m Ham Band"),
+    QT_TRANSLATE_NOOP("BandPlan", "12m CW/Data Ham Band"),
+    QT_TRANSLATE_NOOP("BandPlan", "12m Ham Band"),
+    QT_TRANSLATE_NOOP("BandPlan", "15m CW/Data Ham Band"),
+    QT_TRANSLATE_NOOP("BandPlan", "15m Ham Band"),
+    QT_TRANSLATE_NOOP("BandPlan", "160m Ham Band"),
+    QT_TRANSLATE_NOOP("BandPlan", "17m CW/Data Ham Band"),
+    QT_TRANSLATE_NOOP("BandPlan", "17m Ham Band"),
+    QT_TRANSLATE_NOOP("BandPlan", "20m CW/Data Ham Band"),
+    QT_TRANSLATE_NOOP("BandPlan", "20m Phone Ham Band"),
+    QT_TRANSLATE_NOOP("BandPlan", "2200m Ham Band"),
+    QT_TRANSLATE_NOOP("BandPlan", "23cm Ham Band"),
+    QT_TRANSLATE_NOOP("BandPlan", "2m CW/Data Ham Band"),
+    QT_TRANSLATE_NOOP("BandPlan", "2m Ham Band"),
+    QT_TRANSLATE_NOOP("BandPlan", "30m CW/Data Ham Band"),
+    QT_TRANSLATE_NOOP("BandPlan", "33cm Ham Band"),
+    QT_TRANSLATE_NOOP("BandPlan", "40m CW/Data Ham Band"),
+    QT_TRANSLATE_NOOP("BandPlan", "40m Phone Ham Band"),
+    QT_TRANSLATE_NOOP("BandPlan", "60m Ham Band"),
+    QT_TRANSLATE_NOOP("BandPlan", "630m Ham Band"),
+    QT_TRANSLATE_NOOP("BandPlan", "6m CW/Data Ham Band"),
+    QT_TRANSLATE_NOOP("BandPlan", "6m Ham Band"),
+    QT_TRANSLATE_NOOP("BandPlan", "70cm Ham Band"),
+    QT_TRANSLATE_NOOP("BandPlan", "80m CW/Data Ham Band"),
+    QT_TRANSLATE_NOOP("BandPlan", "80m Phone Ham Band"),
+    QT_TRANSLATE_NOOP("BandPlan", "Aeronautical Radionavigation"),
+    QT_TRANSLATE_NOOP("BandPlan", "Aeronautical Radionavigation (Ground)"),
+    QT_TRANSLATE_NOOP("BandPlan", "Aeronautical Radionavigation (Radio Beacons)"),
+    QT_TRANSLATE_NOOP("BandPlan", "Air Band VOR/ILS"),
+    QT_TRANSLATE_NOOP("BandPlan", "Air Band Voice"),
+    QT_TRANSLATE_NOOP("BandPlan", "Broadcast Radio"),
+    QT_TRANSLATE_NOOP("BandPlan", "Broadcast Television"),
+    QT_TRANSLATE_NOOP("BandPlan", "CB"),
+    QT_TRANSLATE_NOOP("BandPlan", "GHz Ham Band"),
+    QT_TRANSLATE_NOOP("BandPlan", "Marine"),
+    QT_TRANSLATE_NOOP("BandPlan", "Maritime Radionavigation"),
+    QT_TRANSLATE_NOOP("BandPlan", "Maritime Radionavigation (Radio Beacons)"),
+    QT_TRANSLATE_NOOP("BandPlan", "Mil Sat"),
+    QT_TRANSLATE_NOOP("BandPlan", "Military Air"),
+    QT_TRANSLATE_NOOP("BandPlan", "PMR446"),
+    QT_TRANSLATE_NOOP("BandPlan", "Radionavigation"),
+    QT_TRANSLATE_NOOP("BandPlan", "Radionavigation Satellite"),
+    QT_TRANSLATE_NOOP("BandPlan", "Radionavigation Satellite (Space to Earth)"),
+};
+
+BandInfo localizedBand(const BandInfo &band)
+{
+    BandInfo result = band;
+    if (band.builtIn) {
+        for (const char *name : bandNames) {
+            if (band.name == QLatin1String(name)) {
+                result.name = QCoreApplication::translate("BandPlan", name);
+                break;
+            }
+        }
+    }
+    return result;
+}
+}
 
 BandPlan* BandPlan::m_pThis = 0;
 
@@ -66,6 +133,12 @@ bool BandPlan::load()
     QFile file(m_bandPlanFile);
     if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) return false;
 
+    QSet<QString> builtInRows;
+    QFile bundled(QStringLiteral(":/textfiles/bandplan.csv"));
+    if (bundled.open(QIODevice::ReadOnly | QIODevice::Text)) {
+        while (!bundled.atEnd()) builtInRows.insert(QString::fromUtf8(bundled.readLine()).trimmed());
+    }
+
     m_BandInfoList.clear();
 
     while (!file.atEnd())
@@ -87,6 +160,7 @@ bool BandPlan::load()
             info.step         = strings[3].toInt();
             info.color        = QColor(strings[4].trimmed());
             info.name         = strings[5].trimmed();
+            info.builtIn      = builtInRows.contains(line);
 
             m_BandInfoList.append(info);
         }
@@ -103,7 +177,7 @@ QList<BandInfo> BandPlan::getBandsInRange(qint64 low, qint64 high)
     for (int i = 0; i < m_BandInfoList.size(); i++) {
         if(m_BandInfoList[i].maxFrequency < low) continue;
         if(m_BandInfoList[i].minFrequency > high) continue;
-        found.append(m_BandInfoList[i]);
+        found.append(localizedBand(m_BandInfoList[i]));
     }
     return found;
 }
@@ -114,7 +188,7 @@ QList<BandInfo> BandPlan::getBandsEncompassing(qint64 freq)
     for (int i = 0; i < m_BandInfoList.size(); i++) {
         if(m_BandInfoList[i].maxFrequency < freq) continue;
         if(m_BandInfoList[i].minFrequency > freq) continue;
-        found.append(m_BandInfoList[i]);
+        found.append(localizedBand(m_BandInfoList[i]));
     }
     return found;
 }

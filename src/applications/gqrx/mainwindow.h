@@ -24,6 +24,7 @@
 #define MAINWINDOW_H
 
 #include <QColor>
+#include <QByteArray>
 #include <QMainWindow>
 #include <QPointer>
 #include <QSettings>
@@ -32,6 +33,7 @@
 #include <QMessageBox>
 #include <QFileDialog>
 #include <QSvgWidget>
+#include <QElapsedTimer>
 
 #include "qtgui/dockrxopt.h"
 #include "qtgui/dockaudio.h"
@@ -65,6 +67,9 @@ public:
 
     bool configOk; /*!< Main app uses this flag to know whether we should abort or continue. */
 
+protected:
+    void changeEvent(QEvent *event) override;
+
 public slots:
     void setNewFrequency(qint64 rx_freq);
     void setMarkerA(qint64 freq);
@@ -78,6 +83,12 @@ private:
     QString             m_cfg_dir;   /*!< Default config dir, e.g. XDG_CONFIG_HOME. */
     QString             m_last_dir;
     RecentConfig       *m_recent_config; /* Menu File Recent config */
+    QMenu              *m_languageMenu = nullptr;
+    QAction            *m_systemLanguageAction = nullptr;
+    QByteArray          m_statusSource;
+    QString             m_statusArgument;
+    QElapsedTimer       m_statusElapsed;
+    int                 m_statusTimeout = 0;
 
     qint64 d_lnb_lo;  /* LNB LO in Hz. */
     qint64 d_hw_freq;
@@ -140,6 +151,7 @@ private:
     void updateGainStages(bool read_from_device);
     void showSimpleTextFile(const QString &resource_path,
                             const QString &window_title);
+    void showStatusMessage(const char *source, const QString &argument = QString(), int timeout = 0);
     /* key shortcuts */
     void frequencyFocusShortcut();
     void rxOffsetZeroShortcut();

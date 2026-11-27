@@ -38,6 +38,9 @@ class CDemodOptions : public QDialog
 {
     Q_OBJECT
 
+protected:
+    void changeEvent(QEvent *event) override;
+
 public:
 
     /*! \brief Index in the QStackedWidget. */

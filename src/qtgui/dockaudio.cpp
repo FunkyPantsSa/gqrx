@@ -20,6 +20,7 @@
  * the Free Software Foundation, Inc., 51 Franklin Street,
  * Boston, MA 02110-1301, USA.
  */
+#include "retranslation.h"
 #include <cmath>
 #include <QDebug>
 #include <QDateTime>
@@ -507,4 +508,21 @@ void DockAudio::increaseAudioGainShortcut() {
 
 void DockAudio::decreaseAudioGainShortcut() {
 	ui->audioGainSlider->triggerAction(QSlider::SliderPageStepSub);
+}
+
+void DockAudio::changeEvent(QEvent *event)
+{
+    QDockWidget::changeEvent(event);
+    if (event->type() == QEvent::LanguageChange)
+    {
+        const QString audioGainDbLabelText = ui->audioGainDbLabel->text();
+        const QString audioRecLabelText = ui->audioRecLabel->text();
+        RetranslationGuard guard(this);
+        ui->retranslateUi(this);
+        toggleViewAction()->setText(windowTitle());
+        ui->audioGainDbLabel->setText(audioGainDbLabelText);
+        ui->audioRecLabel->setText(audioRecLabelText);
+        ui->audioRecButton->setToolTip(ui->audioRecButton->isChecked() ? tr("Stop audio recorder") : tr("Start audio recorder"));
+        ui->audioPlayButton->setToolTip(ui->audioPlayButton->isChecked() ? tr("Stop audio playback") : tr("Start playback of last recorded audio file"));
+    }
 }

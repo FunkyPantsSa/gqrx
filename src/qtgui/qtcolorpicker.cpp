@@ -44,6 +44,9 @@
 **
 ****************************************************************************/
 
+#include <QEvent>
+#include <QCoreApplication>
+#include <QVariant>
 #include <QApplication>
 #include <QWindow>
 #include <QScreen>
@@ -461,12 +464,48 @@ void QtColorPicker::setCurrentColor(const QColor &color)
 */
 void QtColorPicker::insertColor(const QColor &color, const QString &text, int index)
 {
-    popup->insertColor(color, text, index);
-    if (!firstInserted) {
-	col = color;
-	setText(text);
-	firstInserted = true;
+    static const char * const names[] = {
+        QT_TR_NOOP("Black"), QT_TR_NOOP("White"), QT_TR_NOOP("Red"),
+        QT_TR_NOOP("Dark red"), QT_TR_NOOP("Green"), QT_TR_NOOP("Dark green"),
+        QT_TR_NOOP("Blue"), QT_TR_NOOP("Dark blue"), QT_TR_NOOP("Cyan"),
+        QT_TR_NOOP("Dark cyan"), QT_TR_NOOP("Magenta"), QT_TR_NOOP("Dark magenta"),
+        QT_TR_NOOP("Yellow"), QT_TR_NOOP("Dark yellow"), QT_TR_NOOP("Gray"),
+        QT_TR_NOOP("Dark gray"), QT_TR_NOOP("Light gray"), QT_TR_NOOP("Pink"),
+        QT_TR_NOOP("Custom")
+    };
+    QString source;
+    for (const char *name : names) {
+        if (text == QLatin1String(name) || text == tr(name)
+                || text == QCoreApplication::translate("DockFft", name)) {
+            source = QLatin1String(name);
+            break;
+        }
     }
+    const QString label = source.isEmpty() ? text : tr(source.toUtf8().constData());
+    popup->insertColor(color, label, index);
+    if (auto *item = popup->find(color)) item->setProperty("gqrxColorName", source);
+    if (!firstInserted) {
+        col = color;
+        setText(label);
+        firstInserted = true;
+    }
+}
+
+void QtColorPicker::changeEvent(QEvent *event)
+{
+    QPushButton::changeEvent(event);
+    if (event->type() == QEvent::LanguageChange) retranslate();
+}
+
+void QtColorPicker::retranslate()
+{
+    if (!popup) return;
+    const auto colors = popup->findChildren<ColorPickerItem *>();
+    for (auto *item : colors) {
+        const QString source = item->property("gqrxColorName").toString();
+        if (!source.isEmpty()) item->setColor(item->color(), tr(source.toUtf8().constData()));
+    }
+    if (auto *item = popup->find(col)) setText(item->text());
 }
 
 /*! \property QtColorPicker::colorDialog
@@ -894,6 +933,7 @@ void ColorPickerPopup::getColorFromDialog()
 	return;
 
     insertColor(col, tr("Custom"), -1);
+    if (auto *item = find(col)) item->setProperty("gqrxColorName", QStringLiteral("Custom"));
     lastSel = col;
     emit selected(col);
 }

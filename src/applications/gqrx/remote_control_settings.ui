@@ -92,12 +92,6 @@
       <layout class="QHBoxLayout" name="horizontalLayout">
        <item>
         <widget class="QPushButton" name="hostAddButton">
-         <property name="maximumSize">
-          <size>
-           <width>56</width>
-           <height>16777215</height>
-          </size>
-         </property>
          <property name="toolTip">
           <string>Add a new host to the list</string>
          </property>
@@ -108,12 +102,6 @@
        </item>
        <item>
         <widget class="QPushButton" name="hostDelButton">
-         <property name="maximumSize">
-          <size>
-           <width>56</width>
-           <height>16777215</height>
-          </size>
-         </property>
          <property name="toolTip">
           <string>Delete the selected host from the list</string>
          </property>

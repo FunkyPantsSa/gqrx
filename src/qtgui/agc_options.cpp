@@ -20,6 +20,7 @@
  * the Free Software Foundation, Inc., 51 Franklin Street,
  * Boston, MA 02110-1301, USA.
  */
+#include "retranslation.h"
 #include <QDebug>
 #include <QString>
 #include "agc_options.h"
@@ -231,4 +232,23 @@ void CAgcOptions::on_hangButton_toggled(bool checked)
 {
     ui->hangButton->setText(checked ? tr("Enabled") : tr("Disabled"));
     emit hangChanged(checked);
+}
+
+void CAgcOptions::changeEvent(QEvent *event)
+{
+    QDialog::changeEvent(event);
+    if (event->type() == QEvent::LanguageChange)
+    {
+        const QString gainLabelText = ui->gainLabel->text();
+        const QString thresholdLabelText = ui->thresholdLabel->text();
+        const QString slopeLabelText = ui->slopeLabel->text();
+        const QString decayLabelText = ui->decayLabel->text();
+        RetranslationGuard guard(this);
+        ui->retranslateUi(this);
+        ui->gainLabel->setText(gainLabelText);
+        ui->thresholdLabel->setText(thresholdLabelText);
+        ui->slopeLabel->setText(slopeLabelText);
+        ui->decayLabel->setText(decayLabelText);
+        ui->hangButton->setText(ui->hangButton->isChecked() ? tr("Enabled") : tr("Disabled"));
+    }
 }

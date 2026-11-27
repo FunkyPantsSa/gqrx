@@ -1,0 +1,49 @@
+键盘快捷键
+
+主窗口操作：
+
+ Ctrl+D         启动／停止 DSP（数字信号处理）
+ Ctrl+L         从文件加载设置
+ Ctrl+S         将当前设置保存到文件
+ Ctrl+Shift+B   将当前频率和模式加入书签
+ Ctrl+I         打开 I/Q 录制对话框
+ Ctrl+W         将瀑布图保存为图像
+ Ctrl+C         打开 DX 集群对话框
+ F11            切换全屏模式
+ F              将焦点移到频率输入控件
+ Z              将频率偏移归零
+ Delete         清空瀑布图
+ Ctrl+Q         退出程序
+
+接收模式：
+
+ !              关闭解调
+ I              原始 I/Q 信号
+ A              AM（调幅）
+ Shift+A        同步 AM（同步调幅）
+ N              NFM（窄带调频）
+ W              WFM 单声道（宽带调频）
+ Shift+W        WFM 立体声（宽带调频）
+ O              WFM OIRT（OIRT 制式宽带调频立体声）
+ S              LSB（下边带；记忆提示：lower SSB）
+ Shift+S        USB（上边带；记忆提示：upper SSB）
+ C              CW-L（等幅电报，下边带；记忆提示：lower CW）
+ Shift+C        CW-U（等幅电报，上边带；记忆提示：upper CW）
+
+静噪：
+
+ `              重置静噪门限
+ ~              自动设置静噪门限
+
+滤波器带宽：
+
+ <              窄
+ .              标准
+ >              宽
+
+音频功能：
+
+ R              开始／停止录音
+ M              切换静音
+ -              将增益降低 1 dB
+ +              将增益提高 1 dB

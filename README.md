@@ -1,6 +1,8 @@
 Gqrx
 ====
 
+English · [简体中文](README.zh-CN.md)
+
 [![CI](https://github.com/gqrx-sdr/gqrx/workflows/CI/badge.svg)](https://github.com/gqrx-sdr/gqrx/actions?query=workflow%3ACI+branch%3Amaster)
 [![Build](https://github.com/gqrx-sdr/gqrx/workflows/Build/badge.svg)](https://github.com/gqrx-sdr/gqrx/actions?query=workflow%3ABuild+branch%3Amaster)
 
@@ -56,6 +58,19 @@ Tutorials and howtos are being written and published on the website
 https://gqrx.dk/
 
 
+Interface language
+------------------
+
+Select **View → Language** to choose **System default**, **简体中文**, or
+**English**. Changes take effect immediately, and the language preference is
+saved separately from receiver configuration files.
+
+The default is **System default**: Simplified Chinese systems use the Chinese
+interface; all other systems use English. Qt's Simplified Chinese catalog is
+embedded with the application so standard buttons and dialogs are translated
+as well.
+
+
 Known problems
 --------------
 
@@ -109,6 +124,9 @@ To compile gqrx from source you need the following dependencies:
     - Network
     - Widgets
     - Svg (runtime-only)
+    - LinguistTools (`lrelease` and `lupdate`, for building and maintaining translations)
+- Qt Simplified Chinese translations, including `qtbase_zh_CN.qm`
+  (for example, `qttranslations5-l10n` or `qt6-translations-l10n` on Debian/Ubuntu)
 - cmake version >= 3.5.0
 
 Gqrx can be compiled from within Qt Creator or in a terminal:

@@ -23,9 +23,17 @@
 #include "bookmarkstaglist.h"
 #include "bookmarks.h"
 #include <QColorDialog>
+#include "retranslation.h"
 #include <stdio.h>
 #include <QMenu>
 #include <QHeaderView>
+
+namespace {
+QString tagName(const QTableWidgetItem *item)
+{
+    return item->data(Qt::UserRole).isValid() ? item->data(Qt::UserRole).toString() : item->text();
+}
+}
 
 BookmarksTagList::BookmarksTagList(QWidget *parent, bool bShowUntagged )
     : QTableWidget(parent)
@@ -64,7 +72,7 @@ void BookmarksTagList::on_cellClicked(int row, int column)
 
 void BookmarksTagList::changeColor(int row, int /*column*/)
 {
-    TagInfo::sptr info = Bookmarks::Get().findOrAddTag(item(row, 1)->text());
+    TagInfo::sptr info = Bookmarks::Get().findOrAddTag(tagName(item(row, 1)));
     QColor color = QColorDialog::getColor(info->color, this);
 
     if(!color.isValid())
@@ -97,7 +105,7 @@ void BookmarksTagList::updateTags()
     for(int i=0; i<rowCount(); i++)
     {
         if(item(i,1)->checkState()==Qt::Unchecked)
-            unchecked.append(item(i,1)->text());
+            unchecked.append(tagName(item(i,1)));
     }
 
     // Get current List of Tags.
@@ -137,7 +145,7 @@ void BookmarksTagList::setSelectedTagsAsString(const QString& strTags)
     for(int i=0; i<iRows; ++i)
     {
         QTableWidgetItem* pItem = item(i,1);
-        QString name = pItem->text();
+        QString name = tagName(pItem);
         bool bChecked = list.contains(name);
         pItem->setCheckState(bChecked ? Qt::Checked : Qt::Unchecked);
     }
@@ -150,7 +158,7 @@ void BookmarksTagList::setSelectedTags(QList<TagInfo::sptr>& tags)
     for(int i=0; i<iRows; ++i)
     {
         QTableWidgetItem* pItem = item(i,1);
-        QString name = pItem->text();
+        QString name = tagName(pItem);
         bool bChecked = false;
         for(QList<TagInfo::sptr>::const_iterator it=tags.begin(), itend=tags.end(); it!=itend; ++it)
         {
@@ -172,7 +180,7 @@ QStringList BookmarksTagList::getSelectedTags()
         QTableWidgetItem* pItem = item(i,1);
         if(pItem->checkState() == Qt::Checked)
         {
-            tags << pItem->text();
+            tags << tagName(pItem);
         }
     }
     return tags;
@@ -189,7 +197,7 @@ void BookmarksTagList::ShowContextMenu(const QPoint& pos)
     #if 0
     // MenuItem "Rename"
     {
-        QAction* actionRename = new QAction("Rename", this);
+        QAction* actionRename = new QAction(tr("Rename"), this);
         menu->addAction(actionRename);
         connect(actionRename, SIGNAL(triggered()), this, SLOT(RenameSelectedTag()));
     }
@@ -197,28 +205,28 @@ void BookmarksTagList::ShowContextMenu(const QPoint& pos)
 
     // MenuItem "Create new Tag"
     {
-        QAction* actionNewTag = new QAction("Create new Tag", this);
+        QAction* actionNewTag = new QAction(tr("Create new Tag"), this);
         menu->addAction(actionNewTag);
         connect(actionNewTag, SIGNAL(triggered()), this, SLOT(AddNewTag()));
     }
 
     // Menu "Delete Tag"
     {
-        QAction* actionDeleteTag = new QAction("Delete Tag", this);
+        QAction* actionDeleteTag = new QAction(tr("Delete Tag"), this);
         menu->addAction(actionDeleteTag);
         connect(actionDeleteTag, SIGNAL(triggered()), this, SLOT(DeleteSelectedTag()));
     }
 
     // Menu "Select All"
     {
-        QAction* action = new QAction("Select All", this);
+        QAction* action = new QAction(tr("Select All"), this);
         menu->addAction(action);
         connect(action, SIGNAL(triggered()), this, SLOT(SelectAll()));
     }
 
     // Menu "Deselect All"
     {
-        QAction* action = new QAction("Deselect All", this);
+        QAction* action = new QAction(tr("Deselect All"), this);
         menu->addAction(action);
         connect(action, SIGNAL(triggered()), this, SLOT(DeselectAll()));
     }
@@ -247,7 +255,7 @@ bool BookmarksTagList::RenameSelectedTag()
 
 void BookmarksTagList::AddNewTag()
 {
-    AddTag("*new*");
+    AddTag(tr("*new*"));
     scrollToBottom();
     editItem(item(rowCount()-1, 1));
 }
@@ -258,9 +266,11 @@ void BookmarksTagList::AddTag(QString name, Qt::CheckState checkstate, QColor co
     setRowCount(i+1);
 
     // Column 1
-    QTableWidgetItem *item = new QTableWidgetItem(name);
+    QTableWidgetItem *item = new QTableWidgetItem(name == TagInfo::strUntagged ? tr("Untagged") : name);
+    if (name == TagInfo::strUntagged) item->setData(Qt::UserRole, name);
     item->setCheckState(checkstate);
-    item->setFlags(Qt::ItemIsSelectable | Qt::ItemIsEditable | Qt::ItemIsEnabled);
+    item->setFlags(Qt::ItemIsSelectable | Qt::ItemIsEnabled |
+                   (name == TagInfo::strUntagged ? Qt::NoItemFlags : Qt::ItemIsEditable));
     setItem(i, 1, item);
 
     // Column 0
@@ -279,7 +289,7 @@ void BookmarksTagList::DeleteSelectedTag()
     }
     int iRow = selected.first().row();
     QTableWidgetItem* pItem = item(iRow,1);
-    QString strTagName = pItem->text();
+    QString strTagName = tagName(pItem);
     DeleteTag(strTagName);
     return;
 }
@@ -296,7 +306,7 @@ void BookmarksTagList::SelectAll()
     for(int i=0; i<iRows; ++i)
     {
         QTableWidgetItem* pItem = item(i,1);
-        QString name = pItem->text();
+        QString name = tagName(pItem);
         pItem->setCheckState(Qt::Checked);
     }
 }
@@ -307,7 +317,19 @@ void BookmarksTagList::DeselectAll()
     for(int i=0; i<iRows; ++i)
     {
         QTableWidgetItem* pItem = item(i,1);
-        QString name = pItem->text();
+        QString name = tagName(pItem);
         pItem->setCheckState(Qt::Unchecked);
+    }
+}
+
+void BookmarksTagList::changeEvent(QEvent *event)
+{
+    QTableWidget::changeEvent(event);
+    if (event->type() == QEvent::LanguageChange) {
+        RetranslationGuard guard(this);
+        for (int row = 0; row < rowCount(); ++row) {
+            auto *tag = item(row, 1);
+            if (tag && tagName(tag) == TagInfo::strUntagged) tag->setText(tr("Untagged"));
+        }
     }
 }

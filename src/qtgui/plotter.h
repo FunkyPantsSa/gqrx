@@ -113,7 +113,9 @@ public:
     }
 
     void setFftCenterFreq(qint64 f) {
-        qint64 limit = ((qint64)m_SampleFreq - m_Span) / 2 - 1;
+        // At full sample bandwidth there is no room to pan. Keep the
+        // bounds ordered (Qt 6 debug builds assert on an inverted range).
+        qint64 limit = qMax<qint64>(0, ((qint64)m_SampleFreq - m_Span) / 2 - 1);
         m_FftCenter = qBound(-limit, f, limit);
     }
 
@@ -192,6 +194,7 @@ public slots:
     }
 
 protected:
+    void changeEvent(QEvent *event) override;
     //re-implemented widget event handlers
     void paintEvent(QPaintEvent *event) override;
     void resizeEvent(QResizeEvent* event) override;

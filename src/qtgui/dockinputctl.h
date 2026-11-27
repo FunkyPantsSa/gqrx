@@ -63,6 +63,9 @@ class DockInputCtl : public QDockWidget
 {
     Q_OBJECT
 
+protected:
+    void changeEvent(QEvent *event) override;
+
 public:
     explicit DockInputCtl(QWidget * parent = 0);
     ~DockInputCtl();

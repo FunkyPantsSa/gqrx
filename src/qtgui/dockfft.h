@@ -35,6 +35,9 @@ class DockFft : public QDockWidget
 {
     Q_OBJECT
 
+protected:
+    void changeEvent(QEvent *event) override;
+
 public:
     explicit DockFft(QWidget *parent = 0);
     ~DockFft();
@@ -116,13 +119,16 @@ private slots:
 
 private:
     void updateInfoLabels(void);
+    void updateMinimumWidth();
 
 private:
     Ui::DockFft   * ui;
+    int           m_designerMinimumWidth = 0;
 //    float         m_maximumFftDb;
 //    float         m_minimumFftDb;
     float         m_sample_rate;
     bool          m_pand_last_modified; /* Flag to indicate which slider was changed last */
+    quint64       m_wfResolution = 0;
     float         m_actual_frame_rate;
     bool          m_frame_dropping;
 };

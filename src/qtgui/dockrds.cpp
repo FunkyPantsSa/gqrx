@@ -20,10 +20,75 @@
  * the Free Software Foundation, Inc., 51 Franklin Street,
  * Boston, MA 02110-1301, USA.
  */
+#include "retranslation.h"
 #include <QDebug>
+#include <QCoreApplication>
+#include <QStringList>
 #include <QVariant>
 #include "dockrds.h"
 #include "ui_dockrds.h"
+
+static const char * const rdsProgramTypes[] = {
+    QT_TRANSLATE_NOOP("RdsProgramType", "Adult Hits"),
+    QT_TRANSLATE_NOOP("RdsProgramType", "Alarm"),
+    QT_TRANSLATE_NOOP("RdsProgramType", "Alarm Test"),
+    QT_TRANSLATE_NOOP("RdsProgramType", "Children’s Programmes"),
+    QT_TRANSLATE_NOOP("RdsProgramType", "Classic Rock"),
+    QT_TRANSLATE_NOOP("RdsProgramType", "Classical"),
+    QT_TRANSLATE_NOOP("RdsProgramType", "College"),
+    QT_TRANSLATE_NOOP("RdsProgramType", "Country"),
+    QT_TRANSLATE_NOOP("RdsProgramType", "Country Music"),
+    QT_TRANSLATE_NOOP("RdsProgramType", "Culture"),
+    QT_TRANSLATE_NOOP("RdsProgramType", "Current Affairs"),
+    QT_TRANSLATE_NOOP("RdsProgramType", "Documentary"),
+    QT_TRANSLATE_NOOP("RdsProgramType", "Drama"),
+    QT_TRANSLATE_NOOP("RdsProgramType", "Easy Listening"),
+    QT_TRANSLATE_NOOP("RdsProgramType", "Education"),
+    QT_TRANSLATE_NOOP("RdsProgramType", "Emergency"),
+    QT_TRANSLATE_NOOP("RdsProgramType", "Emergency Test"),
+    QT_TRANSLATE_NOOP("RdsProgramType", "Finance"),
+    QT_TRANSLATE_NOOP("RdsProgramType", "Folk Music"),
+    QT_TRANSLATE_NOOP("RdsProgramType", "Hip Hop"),
+    QT_TRANSLATE_NOOP("RdsProgramType", "Information"),
+    QT_TRANSLATE_NOOP("RdsProgramType", "Jazz"),
+    QT_TRANSLATE_NOOP("RdsProgramType", "Jazz Music"),
+    QT_TRANSLATE_NOOP("RdsProgramType", "Language"),
+    QT_TRANSLATE_NOOP("RdsProgramType", "Leisure"),
+    QT_TRANSLATE_NOOP("RdsProgramType", "Light Classical"),
+    QT_TRANSLATE_NOOP("RdsProgramType", "National Music"),
+    QT_TRANSLATE_NOOP("RdsProgramType", "News"),
+    QT_TRANSLATE_NOOP("RdsProgramType", "Nostalgia"),
+    QT_TRANSLATE_NOOP("RdsProgramType", "Oldies"),
+    QT_TRANSLATE_NOOP("RdsProgramType", "Oldies Music"),
+    QT_TRANSLATE_NOOP("RdsProgramType", "Other Music"),
+    QT_TRANSLATE_NOOP("RdsProgramType", "Personality"),
+    QT_TRANSLATE_NOOP("RdsProgramType", "Phone-In"),
+    QT_TRANSLATE_NOOP("RdsProgramType", "Pop Music"),
+    QT_TRANSLATE_NOOP("RdsProgramType", "Public"),
+    QT_TRANSLATE_NOOP("RdsProgramType", "Religion"),
+    QT_TRANSLATE_NOOP("RdsProgramType", "Religious Music"),
+    QT_TRANSLATE_NOOP("RdsProgramType", "Religious Talk"),
+    QT_TRANSLATE_NOOP("RdsProgramType", "Rhythm & Blues"),
+    QT_TRANSLATE_NOOP("RdsProgramType", "Rock"),
+    QT_TRANSLATE_NOOP("RdsProgramType", "Rock Music"),
+    QT_TRANSLATE_NOOP("RdsProgramType", "Science"),
+    QT_TRANSLATE_NOOP("RdsProgramType", "Serious Classical"),
+    QT_TRANSLATE_NOOP("RdsProgramType", "Social Affairs"),
+    QT_TRANSLATE_NOOP("RdsProgramType", "Soft"),
+    QT_TRANSLATE_NOOP("RdsProgramType", "Soft Rhythm & Blues"),
+    QT_TRANSLATE_NOOP("RdsProgramType", "Soft Rock"),
+    QT_TRANSLATE_NOOP("RdsProgramType", "Spanish Music"),
+    QT_TRANSLATE_NOOP("RdsProgramType", "Spanish Talk"),
+    QT_TRANSLATE_NOOP("RdsProgramType", "Sport"),
+    QT_TRANSLATE_NOOP("RdsProgramType", "Sports"),
+    QT_TRANSLATE_NOOP("RdsProgramType", "Talk"),
+    QT_TRANSLATE_NOOP("RdsProgramType", "Top 40"),
+    QT_TRANSLATE_NOOP("RdsProgramType", "Travel"),
+    QT_TRANSLATE_NOOP("RdsProgramType", "Unassigned"),
+    QT_TRANSLATE_NOOP("RdsProgramType", "Undefined"),
+    QT_TRANSLATE_NOOP("RdsProgramType", "Varied"),
+    QT_TRANSLATE_NOOP("RdsProgramType", "Weather"),
+};
 
 DockRDS::DockRDS(QWidget *parent) :
     QDockWidget(parent),
@@ -41,7 +106,7 @@ DockRDS::~DockRDS()
 
 void DockRDS::updateRDS(QString text, int type)
 {
-    std::string     str, out;
+    QStringList flags;
 
     /* type 0 = PI
      * type 1 = PS
@@ -66,21 +131,26 @@ void DockRDS::updateRDS(QString text, int type)
         ui->station_name->setText(text);
         break;
     case 2:
+        m_programType = text;
         ui->program_type->setText(text);
+        for (const char *type : rdsProgramTypes) {
+            if (text == QString::fromUtf8(type)) {
+                ui->program_type->setText(QCoreApplication::translate("RdsProgramType", type));
+                break;
+            }
+        }
         break;
     case 3:
-        str = text.toStdString();
-        out = "";
-        if (str.at(0) == '1') out.append("TP ");
-        if (str.at(1) == '1') out.append("TA ");
-        if (str.at(2) == '0') out.append("Speech ");
-        if (str.at(2) == '1') out.append("Music ");
-        if (str.at(3) == '1') out.append("Stereo ");
-        if (str.at(3) == '0') out.append("Mono ");
-        if (str.at(4) == '1') out.append("AH ");
-        if (str.at(5) == '1') out.append("CMP ");
-        if (str.at(6) == '0') out.append("stPTY ");
-        ui->flags->setText(QString::fromStdString(out));
+        m_flags = text;
+        if (text.size() < 7) break;
+        if (text.at(0) == QLatin1Char('1')) flags << QStringLiteral("TP");
+        if (text.at(1) == QLatin1Char('1')) flags << QStringLiteral("TA");
+        flags << (text.at(2) == QLatin1Char('1') ? tr("Music") : tr("Speech"));
+        flags << (text.at(3) == QLatin1Char('1') ? tr("Stereo") : tr("Mono"));
+        if (text.at(4) == QLatin1Char('1')) flags << QStringLiteral("AH");
+        if (text.at(5) == QLatin1Char('1')) flags << QStringLiteral("CMP");
+        if (text.at(6) == QLatin1Char('0')) flags << QStringLiteral("stPTY");
+        ui->flags->setText(flags.join(QLatin1Char(' ')));
         break;
     case 4:
         emit radiotextChanged(text);
@@ -100,6 +170,8 @@ void DockRDS::updateRDS(QString text, int type)
 
 void DockRDS::ClearTextFields()
 {
+    m_programType.clear();
+    m_flags.clear();
     ui->program_information->setText("");
     ui->station_name->setText("");
     ui->program_type->setText("");
@@ -155,4 +227,31 @@ void DockRDS::setRDSmode(bool cmd)
         return;
 
     ui->rdsCheckbox->setChecked(cmd);
+}
+
+void DockRDS::changeEvent(QEvent *event)
+{
+    QDockWidget::changeEvent(event);
+    if (event->type() == QEvent::LanguageChange)
+    {
+        const QString program_informationText = ui->program_information->text();
+        const QString station_nameText = ui->station_name->text();
+        const QString program_typeText = ui->program_type->text();
+        const QString flagsText = ui->flags->text();
+        const QString radiotextText = ui->radiotext->text();
+        const QString clocktimeText = ui->clocktime->text();
+        const QString alt_freqText = ui->alt_freq->text();
+        RetranslationGuard guard(this);
+        ui->retranslateUi(this);
+        toggleViewAction()->setText(windowTitle());
+        ui->program_information->setText(program_informationText);
+        ui->station_name->setText(station_nameText);
+        ui->program_type->setText(program_typeText);
+        ui->flags->setText(flagsText);
+        ui->radiotext->setText(radiotextText);
+        ui->clocktime->setText(clocktimeText);
+        ui->alt_freq->setText(alt_freqText);
+        if (!m_programType.isEmpty()) updateRDS(m_programType, 2);
+        if (!m_flags.isEmpty()) updateRDS(m_flags, 3);
+    }
 }

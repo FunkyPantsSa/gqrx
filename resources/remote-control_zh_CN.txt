@@ -1,0 +1,87 @@
+远程控制协议
+
+支持的命令：
+ f
+    获取频率 [Hz]
+ F <frequency>
+    设置频率 [Hz]
+ m
+    获取解调模式和通带带宽
+ M <mode> [passband]
+    设置解调模式和通带带宽 [Hz]
+    如果将第一个参数“mode”替换为“?”，将返回接收后端支持的模式列表，
+    各模式之间以空格分隔。
+ l|L ?
+    获取可读取（l）或可写入（L）的设置列表，各项以空格分隔。
+ l STRENGTH
+    获取信号强度 [dBFS]
+ l SQL
+    获取静噪门限 [dBFS]
+ L SQL <sql>
+    将静噪门限设为 <sql> [dBFS]
+ l AF
+    获取音频增益 [dB]
+ L AF <gain>
+    将音频增益设为 <gain> [dB]
+ l <gain_name>_GAIN
+    获取名称为 <gain_name> 的增益设置值
+ L <gain_name>_GAIN <value>
+    将名称为 <gain_name> 的增益设置值设为 <value>
+ p RDS_PI
+    获取 RDS 节目标识码（PI，十六进制）；不适用时返回 0000。
+ p RDS_PS_NAME
+    获取 RDS 节目服务名称（PS）
+ p RDS_RADIOTEXT
+    获取 RDS 广播文本（RadioText）消息
+ u RECORD
+    获取音频录制状态
+ U RECORD <status>
+    将音频录制状态设为 <status>
+ u IQRECORD
+    获取 I/Q 录制状态
+ U IQRECORD <status>
+    将 I/Q 录制状态设为 <status>
+ u DSP
+    获取 DSP（SDR 接收机）的运行状态
+ U DSP <status>
+    将 DSP（SDR 接收机）的运行状态设为 <status>
+ u RDS
+    获取 RDS 解码器状态；仅在 WFM 模式下有效。
+ U RDS <status>
+    将 RDS 解码器状态设为 <status>；仅在 WFM 模式下有效。
+ u MUTE
+    获取音频静音状态
+ U MUTE <status>
+    将音频静音状态设为 <status>
+ q|Q
+    关闭连接
+ AOS
+    信号捕获（AOS）事件，开始录音
+ LOS
+    信号丢失（LOS）事件，停止录音
+ LNB_LO [frequency]
+    如果指定了 frequency [Hz]，则设置用于频率显示的 LNB 本振频率；
+    否则输出当前的 LNB 本振频率 [Hz]。
+ \chk_vfo
+    获取 VFO 选项状态（仅用于兼容 hamlib）
+ \dump_state
+    输出状态信息（仅用于兼容 hamlib）
+ \get_powerstat
+    获取电源状态（仅用于兼容 hamlib）
+ v
+    获取“VFO”（仅用于兼容 hamlib）
+ V
+    设置“VFO”（仅用于兼容 hamlib）
+ s
+    获取“Split”异频收发模式（仅用于兼容 hamlib）
+ S
+    设置“Split”异频收发模式（仅用于兼容 hamlib）
+ _
+    获取版本
+
+
+响应：
+ RPRT 0
+    命令执行成功
+ RPRT 1
+    命令执行失败

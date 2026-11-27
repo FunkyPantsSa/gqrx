@@ -37,6 +37,9 @@ class CAudioOptions : public QDialog
 {
     Q_OBJECT
 
+protected:
+    void changeEvent(QEvent *event) override;
+
 public:
     explicit CAudioOptions(QWidget *parent = 0);
     ~CAudioOptions();

@@ -54,6 +54,9 @@ class DockRxOpt : public QDockWidget
 {
     Q_OBJECT
 
+protected:
+    void changeEvent(QEvent *event) override;
+
 public:
 
     /**
@@ -118,6 +121,7 @@ public:
 
     static QStringList ModulationStrings;
     static QString GetStringForModulationIndex(int iModulationIndex);
+    static QString GetDisplayStringForModulationIndex(int index);
     static int GetEnumForModulationString(QString param);
     static bool IsModulationValid(QString strModulation);
 
@@ -128,6 +132,7 @@ public slots:
     void setSquelchLevel(double level);
 
 private:
+    QString m_userFilterWidth;
     void updateHwFreq();
     void updateDemodOptPage(int demod);
     unsigned int filterIdxFromLoHi(int lo, int hi) const;

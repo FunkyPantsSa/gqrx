@@ -20,6 +20,7 @@
  * the Free Software Foundation, Inc., 51 Franklin Street,
  * Boston, MA 02110-1301, USA.
  */
+#include "retranslation.h"
 #include "dxc_options.h"
 #include "ui_dxc_options.h"
 #include <QTcpSocket>
@@ -84,14 +85,14 @@ void DXCOptions::on_pushButton_DXCDisconnect_clicked()
 
 void DXCOptions::connected()
 {
-    ui->plainTextEdit_DXCMonitor->appendPlainText("Connected");
+    ui->plainTextEdit_DXCMonitor->appendPlainText(tr("Connected"));
     ui->pushButton_DXCConnect->setDisabled(true);
     ui->pushButton_DXCDisconnect->setEnabled(true);
 }
 
 void DXCOptions::disconnected()
 {
-    ui->plainTextEdit_DXCMonitor->appendPlainText("Disconnected");
+    ui->plainTextEdit_DXCMonitor->appendPlainText(tr("Disconnected"));
     ui->pushButton_DXCDisconnect->setDisabled(true);
     ui->pushButton_DXCConnect->setEnabled(true);
 }
@@ -161,4 +162,17 @@ void DXCOptions::readSettings(QSettings *settings)
     ui->lineEdit_DXCFilter->setText(settings->value("DXCFilter", "").toString());
 
     settings->endGroup();
+}
+
+void DXCOptions::changeEvent(QEvent *event)
+{
+    QDialog::changeEvent(event);
+    if (event->type() == QEvent::LanguageChange)
+    {
+        const QString monitor = ui->plainTextEdit_DXCMonitor->toPlainText();
+        RetranslationGuard guard(this);
+        ui->retranslateUi(this);
+        if (ui->plainTextEdit_DXCMonitor->toPlainText() != monitor)
+            ui->plainTextEdit_DXCMonitor->setPlainText(monitor);
+    }
 }

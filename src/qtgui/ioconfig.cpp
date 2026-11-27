@@ -20,6 +20,7 @@
  * the Free Software Foundation, Inc., 51 Franklin Street,
  * Boston, MA 02110-1301, USA.
  */
+#include "retranslation.h"
 #include <iomanip>
 #include <QDebug>
 #include <QFile>
@@ -75,7 +76,7 @@ CIoConfig::CIoConfig(QSettings * settings,
     // Output device
     updateOutDev();
 
-    m_scanButton = new QPushButton("&Device scan", ui->buttonBox);
+    m_scanButton = new QPushButton(tr("&Device scan"), ui->buttonBox);
     ui->buttonBox->addButton(m_scanButton, QDialogButtonBox::ButtonRole::ActionRole);
 
     // Signals and slots
@@ -179,7 +180,8 @@ void CIoConfig::saveConfig()
           m_settings->setValue("output/device", QString(outDevList[idx-1].get_name().c_str()));
     }
 #else
-    if (idx > 0 || ui->outDevCombo->currentText() != "Default")
+    // The default label is translated; editable custom device names are data.
+    if (idx != 0 || ui->outDevCombo->currentText() != ui->outDevCombo->itemText(0))
     {
         qDebug() << "Output device:" << ui->outDevCombo->currentText();
         m_settings->setValue("output/device", ui->outDevCombo->currentText());
@@ -555,7 +557,7 @@ void CIoConfig::updateDecimations(void)
         return;
 
     ui->decimCombo->clear();
-    ui->decimCombo->addItem("None", 0);
+    ui->decimCombo->addItem(tr("None"), 0);
     if (rate >= 96000)
         ui->decimCombo->addItem("2", 0);
     if (rate >= 192000)
@@ -629,7 +631,7 @@ void CIoConfig::updateOutDev()
     QString outdev = m_settings->value("output/device", "").toString();
 
     ui->outDevCombo->clear();
-    ui->outDevCombo->addItem("Default");
+    ui->outDevCombo->addItem(tr("Default"));
 
     // get list of audio output devices
 #ifdef WITH_PULSEAUDIO
@@ -680,8 +682,10 @@ void CIoConfig::updateOutDev()
    }
 
 #else
-   ui->outDevCombo->addItem(m_settings->value("output/device", "Default").toString(),
-                            m_settings->value("output/device", "Default").toString());
+   if (!outdev.isEmpty() && outdev != QLatin1String("Default")) {
+       ui->outDevCombo->addItem(outdev, outdev);
+       ui->outDevCombo->setCurrentIndex(1);
+   }
    ui->outDevCombo->setEditable(true);
 #endif // WITH_PULSEAUDIO
 }
@@ -798,4 +802,21 @@ std::string CIoConfig::escapeDevstr(std::string devstr)
         return devstr;
     ss1 << std::quoted(devstr, '\'', '\\');
     return ss1.str();
+}
+
+void CIoConfig::changeEvent(QEvent *event)
+{
+    QDialog::changeEvent(event);
+    if (event->type() == QEvent::LanguageChange)
+    {
+        const QString sampRateLabelText = ui->sampRateLabel->text();
+        RetranslationGuard guard(this);
+        ui->retranslateUi(this);
+        ui->sampRateLabel->setText(sampRateLabelText);
+        m_scanButton->setText(tr("&Device scan"));
+        if (ui->inDevCombo->count())
+            ui->inDevCombo->setItemText(ui->inDevCombo->count() - 1, tr("Other..."));
+        if (ui->outDevCombo->count()) ui->outDevCombo->setItemText(0, tr("Default"));
+        if (ui->decimCombo->count()) ui->decimCombo->setItemText(0, tr("None"));
+    }
 }

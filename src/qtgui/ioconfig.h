@@ -45,6 +45,9 @@ class CIoConfig : public QDialog
 {
     Q_OBJECT
 
+protected:
+    void changeEvent(QEvent *event) override;
+
 public:
     explicit CIoConfig(QSettings *settings, std::map<QString, QVariant> &devList, QWidget *parent = 0);
     virtual ~CIoConfig();

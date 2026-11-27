@@ -26,11 +26,15 @@
 #include <volk/volk.h>
 
 #include <QSettings>
+#include <QApplication>
+#include <QActionGroup>
+#include <QEvent>
 #include <QByteArray>
 #include <QDateTime>
 #include <QDesktopServices>
 #include <QDialogButtonBox>
 #include <QFile>
+#include <QFontDatabase>
 #include <QGroupBox>
 #include <QJsonDocument>
 #include <QKeySequence>
@@ -49,6 +53,8 @@
 #include <QSvgWidget>
 #include "qtgui/ioconfig.h"
 #include "mainwindow.h"
+#include "language_manager.h"
+#include "qtgui/retranslation.h"
 #include "qtgui/dxc_options.h"
 #include "qtgui/dxc_spots.h"
 
@@ -218,6 +224,32 @@ MainWindow::MainWindow(const QString& cfgfile, bool edit_conf, QWidget *parent) 
     ui->menu_View->addAction(ui->mainToolBar->toggleViewAction());
     ui->menu_View->addSeparator();
     ui->menu_View->addAction(ui->actionFullScreen);
+
+    ui->menu_View->addSeparator();
+    m_languageMenu = ui->menu_View->addMenu(tr("&Language"));
+    m_languageMenu->setObjectName(QStringLiteral("menuLanguage"));
+    auto *languages = new QActionGroup(this);
+    m_systemLanguageAction = m_languageMenu->addAction(tr("System default"));
+    m_systemLanguageAction->setData(QStringLiteral("system"));
+    auto *chinese = m_languageMenu->addAction(QString::fromUtf8("简体中文"));
+    chinese->setData(QStringLiteral("zh_CN"));
+    auto *english = m_languageMenu->addAction(QStringLiteral("English"));
+    english->setData(QStringLiteral("en"));
+    for (auto *action : m_languageMenu->actions())
+    {
+        action->setCheckable(true);
+        languages->addAction(action);
+        action->setChecked(action->data().toString() == LanguageManager::instance().language());
+    }
+    connect(languages, &QActionGroup::triggered, this, [this](QAction *action) {
+        if (!LanguageManager::instance().setLanguage(action->data().toString()))
+        {
+            for (auto *entry : m_languageMenu->actions())
+                entry->setChecked(entry->data().toString() == LanguageManager::instance().language());
+            QMessageBox::warning(this, tr("Language Error"),
+                                 tr("The translation files could not be loaded."));
+        }
+    });
 
     /* connect signals and slots */
     connect(ui->freqCtrl, SIGNAL(newFrequency(qint64)), this, SLOT(setNewFrequency(qint64)));
@@ -451,6 +483,56 @@ MainWindow::~MainWindow()
     delete rx;
     delete remote;
     delete qsvg_dummy;
+}
+
+void MainWindow::changeEvent(QEvent *event)
+{
+    QMainWindow::changeEvent(event);
+    if (event->type() != QEvent::LanguageChange || !m_languageMenu)
+        return;
+
+    const QString title = windowTitle();
+    const QString markerA = ui->markerLabelA->text();
+    const QString markerB = ui->markerLabelB->text();
+    const QString delta = ui->deltaFreqLabel->text();
+    const bool dsp = ui->actionDSP->isChecked();
+    {
+        RetranslationGuard guard(this);
+        ui->retranslateUi(this);
+        setWindowTitle(title);
+        ui->markerLabelA->setText(markerA);
+        ui->markerLabelB->setText(markerB);
+        ui->deltaFreqLabel->setText(delta);
+        ui->actionDSP->setText(dsp ? tr("Stop DSP") : tr("Start DSP"));
+        ui->actionDSP->setToolTip(dsp ? tr("Stop DSP processing") : tr("Start DSP processing"));
+        m_languageMenu->setTitle(tr("&Language"));
+        m_systemLanguageAction->setText(tr("System default"));
+        for (auto *action : m_languageMenu->actions())
+            action->setChecked(action->data().toString() == LanguageManager::instance().language());
+        m_recent_config->createMenuActions();
+    }
+
+    if (!ui->statusBar->currentMessage().isEmpty() && !m_statusSource.isEmpty())
+    {
+        const int remaining = m_statusTimeout > 0
+                ? qMax(1, m_statusTimeout - int(m_statusElapsed.elapsed())) : 0;
+        QString message = QCoreApplication::translate("MainWindow", m_statusSource.constData());
+        if (!m_statusArgument.isNull())
+            message = message.arg(m_statusArgument);
+        ui->statusBar->showMessage(message, remaining);
+    }
+}
+
+void MainWindow::showStatusMessage(const char *source, const QString &argument, int timeout)
+{
+    m_statusSource = source;
+    m_statusArgument = argument;
+    m_statusTimeout = timeout;
+    m_statusElapsed.start();
+    QString message = QCoreApplication::translate("MainWindow", source);
+    if (!argument.isNull())
+        message = message.arg(argument);
+    ui->statusBar->showMessage(message, timeout);
 }
 
 /**
@@ -1565,14 +1647,14 @@ void MainWindow::startAudioRec(const QString& filename)
     }
     else if (rx->start_audio_recording(filename.toStdString()))
     {
-        ui->statusBar->showMessage(tr("Error starting audio recorder"));
+        showStatusMessage(QT_TR_NOOP("Error starting audio recorder"));
 
         /* reset state of record button */
         uiDockAudio->setAudioRecButtonState(false);
     }
     else
     {
-        ui->statusBar->showMessage(tr("Recording audio to %1").arg(filename));
+        showStatusMessage(QT_TR_NOOP("Recording audio to %1"), filename);
     }
 }
 
@@ -1582,13 +1664,13 @@ void MainWindow::stopAudioRec()
     if (rx->stop_audio_recording())
     {
         /* okay, this one would be weird if it really happened */
-        ui->statusBar->showMessage(tr("Error stopping audio recorder"));
+        showStatusMessage(QT_TR_NOOP("Error stopping audio recorder"));
 
         uiDockAudio->setAudioRecButtonState(true);
     }
     else
     {
-        ui->statusBar->showMessage(tr("Audio recorder stopped"), 5000);
+        showStatusMessage(QT_TR_NOOP("Audio recorder stopped"), QString(), 5000);
     }
 }
 
@@ -1598,14 +1680,14 @@ void MainWindow::startAudioPlayback(const QString& filename)
 {
     if (rx->start_audio_playback(filename.toStdString()))
     {
-        ui->statusBar->showMessage(tr("Error trying to play %1").arg(filename));
+        showStatusMessage(QT_TR_NOOP("Error trying to play %1"), filename);
 
         /* reset state of record button */
         uiDockAudio->setAudioPlayButtonState(false);
     }
     else
     {
-        ui->statusBar->showMessage(tr("Playing %1").arg(filename));
+        showStatusMessage(QT_TR_NOOP("Playing %1"), filename);
     }
 }
 
@@ -1615,13 +1697,13 @@ void MainWindow::stopAudioPlayback()
     if (rx->stop_audio_playback())
     {
         /* okay, this one would be weird if it really happened */
-        ui->statusBar->showMessage(tr("Error stopping audio playback"));
+        showStatusMessage(QT_TR_NOOP("Error stopping audio playback"));
 
         uiDockAudio->setAudioPlayButtonState(true);
     }
     else
     {
-        ui->statusBar->showMessage(tr("Audio playback stopped"), 5000);
+        showStatusMessage(QT_TR_NOOP("Audio playback stopped"), QString(), 5000);
     }
 }
 
@@ -1687,7 +1769,7 @@ void MainWindow::startIqRecording(const QString& recdir, const QString& format)
             metaFile.remove();
 
         // reset action status
-        ui->statusBar->showMessage(tr("Error starting I/Q recoder"));
+        showStatusMessage(QT_TR_NOOP("Error starting I/Q recorder"));
 
         // show an error message to user
         QMessageBox msg_box;
@@ -1699,8 +1781,7 @@ void MainWindow::startIqRecording(const QString& recdir, const QString& format)
     }
     else
     {
-        ui->statusBar->showMessage(tr("Recording I/Q data to: %1").arg(lastRec),
-                                   5000);
+        showStatusMessage(QT_TR_NOOP("Recording I/Q data to: %1"), lastRec, 5000);
     }
 }
 
@@ -1710,9 +1791,9 @@ void MainWindow::stopIqRecording()
     qDebug() << __func__;
 
     if (rx->stop_iq_recording())
-        ui->statusBar->showMessage(tr("Error stopping I/Q recoder"));
+        showStatusMessage(QT_TR_NOOP("Error stopping I/Q recorder"));
     else
-        ui->statusBar->showMessage(tr("I/Q data recoding stopped"), 5000);
+        showStatusMessage(QT_TR_NOOP("I/Q data recording stopped"), QString(), 5000);
 }
 
 void MainWindow::startIqPlayback(const QString& filename, float samprate, qint64 center_freq)
@@ -1754,7 +1835,7 @@ void MainWindow::startIqPlayback(const QString& filename, float samprate, qint64
     remote->setBandwidth(actual_rate);
 
     // FIXME: would be nice with good/bad status
-    ui->statusBar->showMessage(tr("Playing %1").arg(filename));
+    showStatusMessage(QT_TR_NOOP("Playing %1"), filename);
 
     on_actionDSP_triggered(true);
 }
@@ -1767,7 +1848,7 @@ void MainWindow::stopIqPlayback()
         on_actionDSP_triggered(false);
     }
 
-    ui->statusBar->showMessage(tr("I/Q playback stopped"), 5000);
+    showStatusMessage(QT_TR_NOOP("I/Q playback stopped"), QString(), 5000);
 
     // restore original input device
     auto indev = m_settings->value("input/device", "").toString();
@@ -2373,7 +2454,7 @@ void MainWindow::on_actionKbdShortcuts_triggered()
 void MainWindow::showSimpleTextFile(const QString &resource_path,
                                     const QString &window_title)
 {
-    QResource resource(resource_path);
+    QResource resource(LanguageManager::instance().localizedResource(resource_path));
     QFile news(resource.absoluteFilePath());
 
     if (!news.open(QIODevice::ReadOnly | QIODevice::Text))
@@ -2385,13 +2466,18 @@ void MainWindow::showSimpleTextFile(const QString &resource_path,
     }
 
     QTextStream in(&news);
+#if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
+    in.setCodec("UTF-8");
+#endif
     auto content = in.readAll();
     news.close();
 
     auto *browser = new QTextBrowser();
-    browser->setLineWrapMode(QTextEdit::NoWrap);
-    browser->setFont(QFontDatabase::systemFont(QFontDatabase::FixedFont));
-    browser->append(content);
+    browser->setLineWrapMode(QTextEdit::WidgetWidth);
+    QFont helpFont = QFontDatabase::systemFont(QFontDatabase::FixedFont);
+    helpFont.setPointSizeF(qMax(helpFont.pointSizeF(), QApplication::font().pointSizeF()));
+    browser->setFont(helpFont);
+    browser->setPlainText(content);
     browser->adjustSize();
 
     // scroll to the beginning
@@ -2468,17 +2554,17 @@ void MainWindow::on_actionAddBookmark_triggered()
     // Write the result into variable 'name'.
     {
         QDialog dialog(this);
-        dialog.setWindowTitle("New bookmark");
+        dialog.setWindowTitle(tr("New bookmark"));
 
         auto* LabelAndTextfieldName = new QGroupBox(&dialog);
-        auto* label1 = new QLabel("Bookmark name:", LabelAndTextfieldName);
+        auto* label1 = new QLabel(tr("Bookmark name:"), LabelAndTextfieldName);
         auto* textfield = new QLineEdit(LabelAndTextfieldName);
         auto *layout = new QHBoxLayout;
         layout->addWidget(label1);
         layout->addWidget(textfield);
         LabelAndTextfieldName->setLayout(layout);
 
-        auto* buttonCreateTag = new QPushButton("Create new Tag", &dialog);
+        auto* buttonCreateTag = new QPushButton(tr("Create new Tag"), &dialog);
 
         auto* taglist = new BookmarksTagList(&dialog, false);
         taglist->updateTags();

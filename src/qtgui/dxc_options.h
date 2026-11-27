@@ -39,6 +39,9 @@ class DXCOptions : public QDialog
 {
     Q_OBJECT
 
+protected:
+    void changeEvent(QEvent *event) override;
+
 public:
     explicit DXCOptions(QWidget *parent = 0);
     ~DXCOptions();

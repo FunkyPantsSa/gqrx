@@ -3,6 +3,9 @@
         <file>news.txt</file>
         <file>remote-control.txt</file>
         <file>kbd-shortcuts.txt</file>
+        <file>news_zh_CN.txt</file>
+        <file>remote-control_zh_CN.txt</file>
+        <file>kbd-shortcuts_zh_CN.txt</file>
         <file>bandplan.csv</file>
     </qresource>
 </RCC>

@@ -7,7 +7,7 @@
   <summary xml:lang="de">Software defined Radio auf Basis von GNU Radio und dem Qt GUI Toolkit</summary>
   <summary xml:lang="nl">Software defined radio ontvanger geïmplementeerd met GNU Radio en de Qt GUI toolkit</summary>
   <summary xml:lang="ru">Приемник для программно-определенного радио (SDR) использующий GNU Radio и библиотеку Qt</summary>
-  <summary xml:lang="zh_CN">使用 GNU Radio 和 Qt GUI 实现的软件无线电接收器</summary>
+  <summary xml:lang="zh_CN">使用 GNU Radio 和 Qt 图形界面工具包实现的软件定义无线电接收机</summary>
   <developer id="dk.gqrx">
     <name>Alexandru Csete</name>
   </developer>
@@ -15,8 +15,14 @@
    <p>
     Gqrx is an open source software defined radio receiver (SDR) powered by the GNU Radio and the Qt graphical toolkit.
    </p>
+   <p xml:lang="zh_CN">
+    Gqrx 是一款基于 GNU Radio 和 Qt 图形界面工具包的开源软件定义无线电（SDR）接收机。
+   </p>
    <p>
     Gqrx supports many of the SDR hardware available, including Airspy, Funcube Dongles, rtl-sdr, HackRF and USRP devices.
+   </p>
+   <p xml:lang="zh_CN">
+    Gqrx 支持多种 SDR 硬件，包括 Airspy、Funcube Dongle、rtl-sdr、HackRF 和 USRP 设备。
    </p>
   </description>
   <metadata_license>CC-BY-3.0</metadata_license>
@@ -29,6 +35,7 @@
     <screenshot type="default">
       <image>https://raw.githubusercontent.com/gqrx-sdr/gqrx/master/resources/screenshots/gqrx-main.png</image>
       <caption>Main Gqrx window</caption>
+      <caption xml:lang="zh_CN">Gqrx 主窗口</caption>
     </screenshot>
   </screenshots>
   <content_rating type="oars-1.1" />

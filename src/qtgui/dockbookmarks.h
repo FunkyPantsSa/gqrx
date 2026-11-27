@@ -54,6 +54,9 @@ private:
 
     bool eventFilter(QObject* object, QEvent* event);
 
+protected:
+    void changeEvent(QEvent *event) override;
+
 public:
     explicit DockBookmarks(QWidget *parent = 0);
     ~DockBookmarks();

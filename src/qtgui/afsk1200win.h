@@ -38,6 +38,9 @@ class Afsk1200Win : public QMainWindow
 {
     Q_OBJECT
 
+protected:
+    void changeEvent(QEvent *event) override;
+
 public:
     explicit Afsk1200Win(QWidget *parent = 0);
     ~Afsk1200Win();

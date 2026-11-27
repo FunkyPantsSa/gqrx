@@ -30,6 +30,13 @@ mkdir -p Gqrx.app/Contents/soapy-modules
   <string>dk.gqrx.gqrx</string>
   <key>CFBundleName</key>
   <string>Gqrx</string>
+  <key>CFBundleDevelopmentRegion</key>
+  <string>en</string>
+  <key>CFBundleLocalizations</key>
+  <array>
+    <string>en</string>
+    <string>zh_CN</string>
+  </array>
   <key>CFBundleIconFile</key>
   <string>gqrx.icns</string>
   <key>CFBundleShortVersionString</key>

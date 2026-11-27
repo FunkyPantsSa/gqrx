@@ -20,6 +20,7 @@
  * the Free Software Foundation, Inc., 51 Franklin Street,
  * Boston, MA 02110-1301, USA.
  */
+#include "retranslation.h"
 #include <QDebug>
 #include <QVariant>
 #include <QShortcut>
@@ -87,7 +88,8 @@ DockRxOpt::DockRxOpt(qint64 filterOffsetRange, QWidget *parent) :
         ModulationStrings.append("WFM (stereo)");
         ModulationStrings.append("WFM (oirt)");
     }
-    ui->modeSelector->addItems(ModulationStrings);
+    for (int i = 0; i < ModulationStrings.size(); ++i)
+        ui->modeSelector->addItem(GetDisplayStringForModulationIndex(i), ModulationStrings[i]);
 
     ui->filterFreq->setup(7, -filterOffsetRange/2, filterOffsetRange/2, 1,
                           FCTL_UNIT_KHZ);
@@ -269,8 +271,8 @@ void DockRxOpt::setFilterParam(int lo, int hi)
     {
         float width_f;
         width_f = fabs((hi-lo)/1000.f);
-        ui->filterCombo->setItemText(FILTER_PRESET_USER, QString("User (%1 k)")
-                                     .arg((double)width_f));
+        m_userFilterWidth = QString::number((double)width_f);
+        ui->filterCombo->setItemText(FILTER_PRESET_USER, tr("User (%1 kHz)").arg(m_userFilterWidth));
     }
 }
 
@@ -947,4 +949,34 @@ void DockRxOpt::filterNormalShortcut() {
 void DockRxOpt::filterWideShortcut() {
     setCurrentFilter(FILTER_PRESET_WIDE);
     on_filterCombo_activated(FILTER_PRESET_WIDE);
+}
+
+void DockRxOpt::changeEvent(QEvent *event)
+{
+    QDockWidget::changeEvent(event);
+    if (event->type() == QEvent::LanguageChange)
+    {
+        const QString hwFreqText = ui->hwFreq->text();
+        RetranslationGuard guard(this);
+        ui->retranslateUi(this);
+        toggleViewAction()->setText(windowTitle());
+        ui->hwFreq->setText(hwFreqText);
+        for (int i = 0; i < ui->modeSelector->count(); ++i)
+            ui->modeSelector->setItemText(i, GetDisplayStringForModulationIndex(i));
+        if (!m_userFilterWidth.isEmpty())
+            ui->filterCombo->setItemText(FILTER_PRESET_USER, tr("User (%1 kHz)").arg(m_userFilterWidth));
+    }
+}
+
+QString DockRxOpt::GetDisplayStringForModulationIndex(int index)
+{
+    // Only presentation is localized. Configuration, bookmarks and TCP retain
+    // the original identifiers returned by GetStringForModulationIndex().
+    static const char * const names[] = {
+        QT_TR_NOOP("Demod Off"), QT_TR_NOOP("Raw I/Q"), QT_TR_NOOP("AM"),
+        QT_TR_NOOP("AM-Sync"), QT_TR_NOOP("LSB"), QT_TR_NOOP("USB"),
+        QT_TR_NOOP("CW-L"), QT_TR_NOOP("CW-U"), QT_TR_NOOP("Narrow FM"),
+        QT_TR_NOOP("WFM (mono)"), QT_TR_NOOP("WFM (stereo)"), QT_TR_NOOP("WFM (oirt)")
+    };
+    return index >= 0 && index < MODE_LAST ? tr(names[index]) : QString();
 }

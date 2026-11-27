@@ -46,6 +46,9 @@ public:
     void setHosts(QStringList hosts);
     QStringList getHosts(void) const;
 
+protected:
+    void changeEvent(QEvent *event) override;
+
 private slots:
     void on_hostAddButton_clicked(void);
     void on_hostDelButton_clicked(void);

@@ -20,6 +20,7 @@
  * the Free Software Foundation, Inc., 51 Franklin Street,
  * Boston, MA 02110-1301, USA.
  */
+#include "retranslation.h"
 #include <QMessageBox>
 #include <QDebug>
 #include <QFileDialog>
@@ -41,6 +42,8 @@ CIqTool::CIqTool(QWidget *parent) :
     ui(new Ui::CIqTool)
 {
     ui->setupUi(this);
+    ui->formatCombo->setItemData(0, QStringLiteral("Raw"));
+    ui->formatCombo->setItemData(1, QStringLiteral("SigMF"));
 
     is_recording = false;
     is_playing = false;
@@ -173,7 +176,7 @@ void CIqTool::on_recButton_clicked(bool checked)
     if (checked)
     {
         ui->playButton->setEnabled(false);
-        emit startRecording(recdir->path(), ui->formatCombo->currentText());
+        emit startRecording(recdir->path(), ui->formatCombo->currentData().toString());
 
         refreshDir();
         ui->listWidget->setCurrentRow(ui->listWidget->count()-1);
@@ -263,7 +266,7 @@ void CIqTool::saveSettings(QSettings *settings)
     else
         settings->remove("baseband/rec_dir");
 
-    QString format = ui->formatCombo->currentText();
+    QString format = ui->formatCombo->currentData().toString();
     if (format != "Raw")
         settings->setValue("baseband/rec_format", format);
     else
@@ -281,7 +284,8 @@ void CIqTool::readSettings(QSettings *settings)
 
     // Format of baseband recordings
     QString format = settings->value("baseband/rec_format", "Raw").toString();
-    ui->formatCombo->setCurrentText(format);
+    const int formatIndex = ui->formatCombo->findData(format);
+    if (formatIndex >= 0) ui->formatCombo->setCurrentIndex(formatIndex);
 }
 
 
@@ -416,4 +420,16 @@ void CIqTool::parseFileName(const QString &filename)
         sample_rate = sr;
     if (center_ok)
         center_freq = center;
+}
+
+void CIqTool::changeEvent(QEvent *event)
+{
+    QDialog::changeEvent(event);
+    if (event->type() == QEvent::LanguageChange)
+    {
+        const QString timeLabelText = ui->timeLabel->text();
+        RetranslationGuard guard(this);
+        ui->retranslateUi(this);
+        ui->timeLabel->setText(timeLabelText);
+    }
 }

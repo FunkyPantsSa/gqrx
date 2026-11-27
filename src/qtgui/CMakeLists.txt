@@ -1,6 +1,7 @@
 #######################################################################################################################
 # Add the source files to SRCS_LIST
 add_source_files(SRCS_LIST
+	retranslation.h
 	afsk1200win.cpp
 	afsk1200win.h
 	agc_options.cpp

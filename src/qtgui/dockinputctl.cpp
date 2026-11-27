@@ -20,9 +20,28 @@
  * the Free Software Foundation, Inc., 51 Franklin Street,
  * Boston, MA 02110-1301, USA.
  */
+#include "retranslation.h"
+#include <QCoreApplication>
 #include <QDebug>
 #include "dockinputctl.h"
 #include "ui_dockinputctl.h"
+
+namespace {
+QString gainDisplayName(const QString &name)
+{
+    static const char * const names[] = {
+        QT_TRANSLATE_NOOP("DockInputCtl", "RF"), QT_TRANSLATE_NOOP("DockInputCtl", "IF"),
+        QT_TRANSLATE_NOOP("DockInputCtl", "BB"), QT_TRANSLATE_NOOP("DockInputCtl", "LNA"),
+        QT_TRANSLATE_NOOP("DockInputCtl", "MIX"), QT_TRANSLATE_NOOP("DockInputCtl", "VGA"),
+        QT_TRANSLATE_NOOP("DockInputCtl", "TIA"), QT_TRANSLATE_NOOP("DockInputCtl", "PGA"),
+        QT_TRANSLATE_NOOP("DockInputCtl", "AMP")
+    };
+    for (const char *source : names)
+        if (name.compare(QLatin1String(source), Qt::CaseInsensitive) == 0)
+            return QCoreApplication::translate("DockInputCtl", source);
+    return name;
+}
+}
 
 DockInputCtl::DockInputCtl(QWidget * parent) :
     QDockWidget(parent),
@@ -218,7 +237,7 @@ bool DockInputCtl::setGain(QString name, double value)
 
     for (int idx = 0; idx < gain_labels.length(); idx++)
     {
-        if (gain_labels.at(idx)->text().contains(name))
+        if (gain_sliders.at(idx)->property("name").toString() == name)
         {
             gain = (int)(10 * value);
             gain_sliders.at(idx)->setValue(gain);
@@ -240,7 +259,7 @@ double DockInputCtl::gain(QString &name)
 
     for (int idx = 0; idx < gain_labels.length(); ++idx)
     {
-        if (gain_labels.at(idx)->text() == name)
+        if (gain_sliders.at(idx)->property("name").toString() == name)
         {
             gain = 0.1 * (double)gain_sliders.at(idx)->value();
             break;
@@ -384,7 +403,8 @@ void DockInputCtl::setGainStages(gain_list_t &gain_list)
         step  = (int)(10.0 * gain_list[i].step);
         gain  = (int)(10.0 * gain_list[i].value);
 
-        label = new QLabel(QString("%1 ").arg(gain_list[i].name.c_str()), this);
+        label = new QLabel(gainDisplayName(QString::fromStdString(gain_list[i].name)), this);
+        label->setProperty("gqrxGainName", QString::fromStdString(gain_list[i].name));
         label->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Minimum);
 
         value = new QLabel(QString(" %1 dB").arg(gain_list[i].value, 0, 'f', 1), this);
@@ -601,5 +621,18 @@ void DockInputCtl::getGains(QMap<QString, QVariant> *gains)
     {
         gains->insert(gain_sliders.at(idx)->property("name").toString(),
                       QVariant(gain_sliders.at(idx)->value()));
+    }
+}
+
+void DockInputCtl::changeEvent(QEvent *event)
+{
+    QDockWidget::changeEvent(event);
+    if (event->type() == QEvent::LanguageChange)
+    {
+        RetranslationGuard guard(this);
+        ui->retranslateUi(this);
+        toggleViewAction()->setText(windowTitle());
+        for (auto *label : gain_labels)
+            label->setText(gainDisplayName(label->property("gqrxGainName").toString()));
     }
 }

@@ -94,6 +94,7 @@ public:
     bool colorDialogEnabled() const;
 
     void setStandardColors();
+    void retranslate();
 
     static QColor getColor(const QPoint &pos, bool allowCustomColors = true);
 
@@ -104,6 +105,7 @@ signals:
     void colorChanged(const QColor &);
 
 protected:
+    void changeEvent(QEvent *event) override;
     void paintEvent(QPaintEvent *e);
 
 private slots:

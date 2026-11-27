@@ -49,6 +49,9 @@ class CIqTool : public QDialog
 {
     Q_OBJECT
 
+protected:
+    void changeEvent(QEvent *event) override;
+
 public:
     explicit CIqTool(QWidget *parent = 0);
     ~CIqTool();

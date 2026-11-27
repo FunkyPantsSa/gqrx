@@ -31,6 +31,7 @@
 #include <QColor>
 #include <QDateTime>
 #include <QDebug>
+#include <QEvent>
 #include <QFont>
 #include <QPainter>
 #include <QtGlobal>
@@ -80,10 +81,10 @@ static inline bool out_of_range(float min, float max)
             max < min + FFT_MIN_DB_RANGE);
 }
 
-#define STATUS_TIP \
-    "Click, drag or scroll on spectrum to tune. " \
-    "Drag and scroll X and Y axes for pan and zoom. " \
-    "Drag filter edges to adjust filter."
+static const char * const STATUS_TIP = QT_TRANSLATE_NOOP("CPlotter",
+    "Click, drag or scroll on spectrum to tune. "
+    "Drag and scroll X and Y axes for pan and zoom. "
+    "Drag filter edges to adjust filter.");
 
 CPlotter::CPlotter(QWidget *parent) : QFrame(parent)
 {
@@ -251,7 +252,7 @@ void CPlotter::mouseMoveEvent(QMouseEvent* event)
                     setCursor(QCursor(Qt::SizeHorCursor));
                 m_CursorCaptured = CENTER;
                 if (m_TooltipsEnabled)
-                    showToolTip(event, QString("Demod: %1 kHz").arg(m_DemodCenterFreq/1.e3, 0, 'f', 3));
+                    showToolTip(event, tr("Demod: %1 kHz").arg(m_DemodCenterFreq/1.e3, 0, 'f', 3));
             }
             else if (isPointCloseTo(px, m_DemodHiCutFreqX, m_CursorCaptureDelta))
             {
@@ -260,7 +261,7 @@ void CPlotter::mouseMoveEvent(QMouseEvent* event)
                     setCursor(QCursor(Qt::SizeFDiagCursor));
                 m_CursorCaptured = RIGHT;
                 if (m_TooltipsEnabled)
-                    showToolTip(event, QString("High cut: %1 Hz").arg(m_DemodHiCutFreq));
+                    showToolTip(event, tr("High cut: %1 Hz").arg(m_DemodHiCutFreq));
             }
             else if (isPointCloseTo(px, m_DemodLowCutFreqX, m_CursorCaptureDelta))
             {
@@ -269,7 +270,7 @@ void CPlotter::mouseMoveEvent(QMouseEvent* event)
                     setCursor(QCursor(Qt::SizeBDiagCursor));
                 m_CursorCaptured = LEFT;
                 if (m_TooltipsEnabled)
-                    showToolTip(event, QString("Low cut: %1 Hz").arg(m_DemodLowCutFreq));
+                    showToolTip(event, tr("Low cut: %1 Hz").arg(m_DemodLowCutFreq));
             }
             else if (m_MarkersEnabled && isPointCloseTo(px, m_MarkerAX, m_CursorCaptureDelta))
             {
@@ -277,7 +278,7 @@ void CPlotter::mouseMoveEvent(QMouseEvent* event)
                     setCursor(QCursor(Qt::OpenHandCursor));
                 m_CursorCaptured = MARKER_A;
                 if (m_TooltipsEnabled)
-                    showToolTip(event, QString("Marker A: %1 kHz").arg(m_MarkerFreqA/1.e3, 0, 'f', 3));
+                    showToolTip(event, tr("Marker A: %1 kHz").arg(m_MarkerFreqA/1.e3, 0, 'f', 3));
             }
             else if (m_MarkersEnabled && isPointCloseTo(px, m_MarkerBX, m_CursorCaptureDelta))
             {
@@ -285,7 +286,7 @@ void CPlotter::mouseMoveEvent(QMouseEvent* event)
                     setCursor(QCursor(Qt::OpenHandCursor));
                 m_CursorCaptured = MARKER_B;
                 if (m_TooltipsEnabled)
-                    showToolTip(event, QString("Marker B: %1 kHz").arg(m_MarkerFreqB/1.e3, 0, 'f', 3));
+                    showToolTip(event, tr("Marker B: %1 kHz").arg(m_MarkerFreqB/1.e3, 0, 'f', 3));
             }
             else
             {	//if not near any grab boundaries
@@ -2990,5 +2991,15 @@ void CPlotter::setWfColormap(const QString &cmap)
     {
         for (i = 0; i < 256; i++)
             m_ColorTbl[i].setRgb(viridis[i][0] * 256, viridis[i][1] * 256, viridis[i][2] * 256);
+    }
+}
+
+void CPlotter::changeEvent(QEvent *event)
+{
+    QFrame::changeEvent(event);
+    if (event->type() == QEvent::LanguageChange) {
+        setStatusTip(tr(STATUS_TIP));
+        updateOverlay();
+        update();
     }
 }

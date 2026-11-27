@@ -68,7 +68,7 @@ void RecentConfig::createMenuActions()
         QAction *action = new QAction(nr + " " + (fname.length() > MENU_FILENAME_LEN ?
                                                       fname.left(MENU_FILENAME_LEN) + "..." : fname),
                                       menu);
-        action->setStatusTip("Load settings from config file " + file->canonicalFilePath());
+        action->setStatusTip(tr("Load settings from config file %1").arg(file->canonicalFilePath()));
         action->setData(i);
         connect(action, &QAction::triggered, this, [=](bool) { onMenuAction(i); });
         menu->addAction(action);

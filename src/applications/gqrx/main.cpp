@@ -39,6 +39,7 @@
 
 #include "mainwindow.h"
 #include "gqrx.h"
+#include "language_manager.h"
 
 #include <iostream>
 
@@ -56,6 +57,7 @@ int main(int argc, char *argv[])
     QCoreApplication::setOrganizationDomain(GQRX_ORG_DOMAIN);
     QCoreApplication::setApplicationName(GQRX_APP_NAME);
     QCoreApplication::setApplicationVersion(VERSION);
+    LanguageManager::instance();
 #if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
     QCoreApplication::setAttribute(Qt::AA_UseHighDpiPixmaps, true);
 #endif
@@ -79,14 +81,14 @@ int main(int argc, char *argv[])
         qDebug() << "Failed to disable controlport";
 
     QCommandLineParser parser;
-    parser.setApplicationDescription("Gqrx software defined radio receiver " VERSION);
+    parser.setApplicationDescription(QObject::tr("Gqrx software defined radio receiver %1").arg(VERSION));
     parser.addHelpOption();
     parser.addOptions({
-        {{"s", "style"}, "Use the given style (fusion, windows)", "style"},
-        {{"l", "list"}, "List existing configurations"},
-        {{"c", "conf"}, "Start with this config file", "file"},
-        {{"e", "edit"}, "Edit the config file before using it"},
-        {{"r", "reset"}, "Reset configuration file"},
+        {{"s", "style"}, QObject::tr("Use the given style (fusion, windows)"), "style"},
+        {{"l", "list"}, QObject::tr("List existing configurations")},
+        {{"c", "conf"}, QObject::tr("Start with this config file"), "file"},
+        {{"e", "edit"}, QObject::tr("Edit the config file before using it")},
+        {{"r", "reset"}, QObject::tr("Reset configuration file")},
     });
     parser.process(app);
 
@@ -104,9 +106,9 @@ int main(int argc, char *argv[])
     PaError     err = Pa_Initialize();
     if (err != paNoError)
     {
-        QString message = QString("Portaudio error: %1").arg(Pa_GetErrorText(err));
+        QString message = QObject::tr("PortAudio error: %1").arg(Pa_GetErrorText(err));
         qCritical() << message;
-        QMessageBox::critical(nullptr, "Audio Error", message,
+        QMessageBox::critical(nullptr, QObject::tr("Audio Error"), message,
                               QMessageBox::Abort, QMessageBox::NoButton);
         return 1;
     }
@@ -124,9 +126,9 @@ int main(int argc, char *argv[])
                                "Test stream", &ss, NULL, NULL, &error);
     if (!test_sink)
     {
-        QString message = QString("Pulseaudio error: %1").arg(pa_strerror(error));
+        QString message = QObject::tr("PulseAudio error: %1").arg(pa_strerror(error));
         qCritical() << message;
-        QMessageBox::critical(0, "Audio Error", message,
+        QMessageBox::critical(0, QObject::tr("Audio Error"), message,
                               QMessageBox::Abort, QMessageBox::NoButton);
         return 1;
     }
@@ -223,13 +225,12 @@ static void list_conf()
     QStringList conf_files = conf_dir.entryList(QStringList("*.conf"));
 
     std::cout << std::endl
-              << " Existing configuration files in "
-              << conf_path.toStdString()
+              << QObject::tr("Existing configuration files in %1").arg(conf_path).toStdString()
               << std::endl;
 
     if (conf_files.isEmpty())
     {
-        std::cout << "     *** NONE ***" << std::endl;
+        std::cout << "     " << QObject::tr("*** NONE ***").toStdString() << std::endl;
     }
     else
     {

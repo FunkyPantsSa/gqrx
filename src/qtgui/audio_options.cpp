@@ -20,6 +20,7 @@
  * the Free Software Foundation, Inc., 51 Franklin Street,
  * Boston, MA 02110-1301, USA.
  */
+#include "retranslation.h"
 #include <QFileDialog>
 #include <QPalette>
 #include <QDebug>
@@ -241,4 +242,14 @@ void CAudioOptions::on_udpPort_valueChanged(int port)
 void CAudioOptions::on_udpStereo_stateChanged(int state)
 {
     emit newUdpStereo(state);
+}
+
+void CAudioOptions::changeEvent(QEvent *event)
+{
+    QDialog::changeEvent(event);
+    if (event->type() == QEvent::LanguageChange)
+    {
+        RetranslationGuard guard(this);
+        ui->retranslateUi(this);
+    }
 }

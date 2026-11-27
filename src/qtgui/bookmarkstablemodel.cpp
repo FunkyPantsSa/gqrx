@@ -48,19 +48,19 @@ QVariant BookmarksTableModel::headerData ( int section, Qt::Orientation orientat
         switch(section)
         {
         case COL_FREQUENCY:
-            return QString("Frequency");
+            return tr("Frequency");
             break;
         case COL_NAME:
-            return QString("Name");
+            return tr("Name");
             break;
         case COL_MODULATION:
-            return QString("Modulation");
+            return tr("Modulation");
             break;
         case COL_BANDWIDTH:
-            return QString("Bandwidth");
+            return tr("Bandwidth");
             break;
         case COL_TAGS:
-            return QString("Tag");
+            return tr("Tag");
             break;
         }
     }
@@ -90,7 +90,7 @@ QVariant BookmarksTableModel::data ( const QModelIndex & index, int role ) const
         case COL_NAME:
                 return (role==Qt::EditRole)?QString(info.name):info.name;
         case COL_MODULATION:
-                return info.modulation;
+                return role == Qt::DisplayRole ? DockRxOpt::GetDisplayStringForModulationIndex(DockRxOpt::GetEnumForModulationString(info.modulation)) : info.modulation;
         case COL_BANDWIDTH:
             return (info.bandwidth==0)?QVariant(""):QVariant(info.bandwidth);
          case COL_TAGS:
@@ -102,7 +102,7 @@ QVariant BookmarksTableModel::data ( const QModelIndex & index, int role ) const
                     strTags.append(",");
                 }
                 TagInfo::sptr tag = info.tags[iTag];
-                strTags.append(tag->name);
+                strTags.append(role == Qt::DisplayRole && tag->name == TagInfo::strUntagged ? tr("Untagged") : tag->name);
             }
             return strTags;
         }
@@ -222,4 +222,10 @@ BookmarkInfo *BookmarksTableModel::getBookmarkAtRow(int row)
 int BookmarksTableModel::GetBookmarksIndexForRow(int iRow)
 {
   return m_mapRowToBookmarksIndex[iRow];
+}
+
+void BookmarksTableModel::retranslate()
+{
+    emit headerDataChanged(Qt::Horizontal, 0, columnCount() - 1);
+    if (rowCount()) emit dataChanged(index(0, 0), index(rowCount() - 1, columnCount() - 1));
 }

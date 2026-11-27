@@ -37,6 +37,9 @@ public:
     void setSelectedTags(QList<TagInfo::sptr>& tags);
     bool m_bUpdating;
 
+protected:
+    void changeEvent(QEvent *event) override;
+
 private:
     bool m_bShowUntagged;
 

@@ -34,6 +34,7 @@ class BookmarksTableModel : public QAbstractTableModel
     Q_OBJECT
 
 public:
+    void retranslate();
     enum EColumns
     {
         COL_FREQUENCY,

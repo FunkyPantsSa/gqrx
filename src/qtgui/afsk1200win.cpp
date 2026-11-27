@@ -20,6 +20,7 @@
  * the Free Software Foundation, Inc., 51 Franklin Street,
  * Boston, MA 02110-1301, USA.
  */
+#include "retranslation.h"
 #include <QMessageBox>
 #include <QFileDialog>
 #include <QFile>
@@ -132,4 +133,14 @@ void Afsk1200Win::on_actionInfo_triggered()
                           "at <a href='https://sourceforge.net/projects/qtmm/'>https://sourceforge.net/projects/qtmm/</a>.</p>"
                           ).arg(VERSION));
 
+}
+
+void Afsk1200Win::changeEvent(QEvent *event)
+{
+    QMainWindow::changeEvent(event);
+    if (event->type() == QEvent::LanguageChange)
+    {
+        RetranslationGuard guard(this);
+        ui->retranslateUi(this);
+    }
 }

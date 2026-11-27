@@ -46,6 +46,9 @@ class DockAudio : public QDockWidget
 {
     Q_OBJECT
 
+protected:
+    void changeEvent(QEvent *event) override;
+
 public:
     explicit DockAudio(QWidget *parent = 0);
     ~DockAudio();

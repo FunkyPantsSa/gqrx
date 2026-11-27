@@ -36,6 +36,7 @@ struct BandInfo
     qint64  minFrequency;
     qint64  maxFrequency;
     QString name;
+    bool builtIn = false;
     QString modulation;
     qint64  step;
     QColor  color;

@@ -20,6 +20,7 @@
  * the Free Software Foundation, Inc., 51 Franklin Street,
  * Boston, MA 02110-1301, USA.
  */
+#include "retranslation.h"
 #include <QDebug>
 #include "demod_options.h"
 #include "ui_demod_options.h"
@@ -250,4 +251,14 @@ float CDemodOptions::getPllBw(void) const
 void CDemodOptions::on_pllBwSelector_activated(int index)
 {
     emit amSyncPllBwSelected(pll_bw_from_index(index));
+}
+
+void CDemodOptions::changeEvent(QEvent *event)
+{
+    QDialog::changeEvent(event);
+    if (event->type() == QEvent::LanguageChange)
+    {
+        RetranslationGuard guard(this);
+        ui->retranslateUi(this);
+    }
 }

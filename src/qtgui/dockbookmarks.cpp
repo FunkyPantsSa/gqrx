@@ -20,6 +20,7 @@
  * the Free Software Foundation, Inc., 51 Franklin Street,
  * Boston, MA 02110-1301, USA.
  */
+#include "retranslation.h"
 #include <cmath>
 #include <cstdlib>
 #include <QComboBox>
@@ -60,13 +61,13 @@ DockBookmarks::DockBookmarks(QWidget *parent) :
     contextmenu = new QMenu(this);
     // MenuItem Delete
     {
-        QAction* action = new QAction("Delete Bookmark", this);
+        QAction* action = new QAction(tr("Delete Bookmark"), this);
         contextmenu->addAction(action);
         connect(action, SIGNAL(triggered()), this, SLOT(DeleteSelectedBookmark()));
     }
     // MenuItem Add
     {
-        actionAddBookmark = new QAction("Add Bookmark", this);
+        actionAddBookmark = new QAction(tr("Add Bookmark"), this);
         contextmenu->addAction(actionAddBookmark);
     }
     ui->tableViewFrequencyList->setContextMenuPolicy(Qt::CustomContextMenu);
@@ -139,6 +140,7 @@ void DockBookmarks::updateBookmarks()
 //Data has been edited
 void DockBookmarks::onDataChanged(const QModelIndex&, const QModelIndex &)
 {
+    if (m_updating) return;
     updateTags();
     Bookmarks::Get().save();
 }
@@ -152,7 +154,7 @@ void DockBookmarks::on_tableWidgetTagList_itemChanged(QTableWidgetItem *item)
     if (col != 1)
         return;
 
-    QString strText = item->text();
+    QString strText = item->data(Qt::UserRole).isValid() ? item->data(Qt::UserRole).toString() : item->text();
     Bookmarks::Get().setTagChecked(strText, (item->checkState() == Qt::Checked));
 }
 
@@ -186,7 +188,7 @@ bool DockBookmarks::DeleteSelectedBookmark()
         return true;
     }
 
-    if (QMessageBox::question(this, "Delete bookmark", "Really delete?", QMessageBox::Yes | QMessageBox::No) == QMessageBox::Yes)
+    if (QMessageBox::question(this, tr("Delete bookmark"), tr("Really delete?"), QMessageBox::Yes | QMessageBox::No) == QMessageBox::Yes)
     {
         int iIndex = bookmarksTableModel->GetBookmarksIndexForRow(selected.first().row());
         Bookmarks::Get().remove(iIndex);
@@ -218,7 +220,7 @@ QWidget *ComboBoxDelegateModulation::createEditor(QWidget *parent, const QStyleO
     QComboBox* comboBox = new QComboBox(parent);
     for (int i = 0; i < DockRxOpt::ModulationStrings.size(); ++i)
     {
-        comboBox->addItem(DockRxOpt::ModulationStrings[i]);
+        comboBox->addItem(DockRxOpt::GetDisplayStringForModulationIndex(i), DockRxOpt::ModulationStrings[i]);
     }
     setEditorData(comboBox, index);
     return comboBox;
@@ -235,7 +237,7 @@ void ComboBoxDelegateModulation::setEditorData(QWidget *editor, const QModelInde
 void ComboBoxDelegateModulation::setModelData(QWidget *editor, QAbstractItemModel *model, const QModelIndex &index) const
 {
     QComboBox *comboBox = static_cast<QComboBox*>(editor);
-    model->setData(index, comboBox->currentText(), Qt::EditRole);
+    model->setData(index, comboBox->currentData(), Qt::EditRole);
 }
 
 void DockBookmarks::changeBookmarkTags(int row, int /*column*/)
@@ -250,7 +252,7 @@ void DockBookmarks::changeBookmarkTags(int row, int /*column*/)
     // Write the result into variable 'tags'.
     {
         QDialog dialog(this);
-        dialog.setWindowTitle("Change Bookmark Tags");
+        dialog.setWindowTitle(tr("Change Bookmark Tags"));
 
         BookmarksTagList* taglist = new BookmarksTagList(&dialog, false);
         taglist->updateTags();
@@ -283,5 +285,22 @@ void DockBookmarks::changeBookmarkTags(int row, int /*column*/)
             }
             Bookmarks::Get().save();
         }
+    }
+}
+
+void DockBookmarks::changeEvent(QEvent *event)
+{
+    QDockWidget::changeEvent(event);
+    if (event->type() == QEvent::LanguageChange)
+    {
+        RetranslationGuard guard(this);
+        ui->retranslateUi(this);
+        toggleViewAction()->setText(windowTitle());
+        contextmenu->actions().first()->setText(tr("Delete Bookmark"));
+        actionAddBookmark->setText(tr("Add Bookmark"));
+        const bool updating = m_updating;
+        m_updating = true;
+        bookmarksTableModel->retranslate();
+        m_updating = updating;
     }
 }

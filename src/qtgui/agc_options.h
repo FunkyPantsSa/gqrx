@@ -46,6 +46,9 @@ class CAgcOptions : public QDialog
 {
     Q_OBJECT
 
+protected:
+    void changeEvent(QEvent *event) override;
+
 public:
     explicit CAgcOptions(QWidget *parent = 0);
     ~CAgcOptions();

@@ -12,6 +12,9 @@ class DockRDS : public QDockWidget
 {
     Q_OBJECT
 
+protected:
+    void changeEvent(QEvent *event) override;
+
 public:
     explicit DockRDS(QWidget *parent = 0);
     ~DockRDS();
@@ -37,6 +40,8 @@ private slots:
     void on_rdsCheckbox_toggled(bool checked);
 
 private:
+    QString m_programType;
+    QString m_flags;
     Ui::DockRDS *ui;        /*! The Qt designer UI file. */
 };
 

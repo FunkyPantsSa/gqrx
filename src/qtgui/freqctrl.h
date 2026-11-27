@@ -64,6 +64,7 @@ public slots:
     void    setFrequencyFocus();
 
 protected:
+    void changeEvent(QEvent *event) override;
     void    paintEvent(QPaintEvent *);
     void    mouseMoveEvent(QMouseEvent *);
     void    mousePressEvent(QMouseEvent *);

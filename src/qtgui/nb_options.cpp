@@ -20,6 +20,7 @@
  * the Free Software Foundation, Inc., 51 Franklin Street,
  * Boston, MA 02110-1301, USA.
  */
+#include "retranslation.h"
 #include "nb_options.h"
 #include "ui_nb_options.h"
 
@@ -63,4 +64,14 @@ void CNbOptions::on_nb1Threshold_valueChanged(double val)
 void CNbOptions::on_nb2Threshold_valueChanged(double val)
 {
     emit thresholdChanged(2, val);
+}
+
+void CNbOptions::changeEvent(QEvent *event)
+{
+    QDialog::changeEvent(event);
+    if (event->type() == QEvent::LanguageChange)
+    {
+        RetranslationGuard guard(this);
+        ui->retranslateUi(this);
+    }
 }

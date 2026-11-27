@@ -32,6 +32,7 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 #include <QDebug>
+#include <QEvent>
 #include "freqctrl.h"
 
 // Manual adjustment of Font size as percent of control height
@@ -42,9 +43,9 @@
 #define SEPRATIO_N 100         // separation rectangle size ratio numerator times 100
 #define SEPRATIO_D 3           // separation rectangle size ratio denominator
 
-#define STATUS_TIP \
-    "Scroll or left-click to increase/decrease digit. " \
-    "Right-click to clear digits."
+static const char * const STATUS_TIP = QT_TRANSLATE_NOOP("CFreqCtrl",
+    "Scroll or left-click to increase/decrease digit. "
+    "Right-click to clear digits.");
 
 CFreqCtrl::CFreqCtrl(QWidget *parent) :
     QFrame(parent)
@@ -791,4 +792,13 @@ void CFreqCtrl::setFrequencyFocus()
     }
 
     setActiveDigit(position);
+}
+
+void CFreqCtrl::changeEvent(QEvent *event)
+{
+    QFrame::changeEvent(event);
+    if (event->type() == QEvent::LanguageChange) {
+        setStatusTip(tr(STATUS_TIP));
+        update();
+    }
 }

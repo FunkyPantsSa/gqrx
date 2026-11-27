@@ -136,6 +136,12 @@ else()
     endif()
 endif()
 
+if(Qt6_FOUND)
+    find_package(Qt6 REQUIRED COMPONENTS LinguistTools)
+else()
+    find_package(Qt5 REQUIRED COMPONENTS LinguistTools)
+endif()
+
 include(FindPkgConfig)
 find_package(Gnuradio-osmosdr REQUIRED)
 
@@ -272,7 +278,13 @@ install(FILES dk.gqrx.gqrx.appdata.xml DESTINATION share/metainfo)
 install(FILES resources/icons/dk.gqrx.gqrx.svg DESTINATION share/icons/hicolor/scalable/apps)
 
 # Add subdirectories
+add_subdirectory(translations)
 add_subdirectory(src)
+
+include(CTest)
+if(BUILD_TESTING)
+    add_subdirectory(tests)
+endif()
 
 # uninstall target
 # https://cmake.org/Wiki/CMake_FAQ#Can_I_do_.22make_uninstall.22_with_CMake.3F

@@ -22,6 +22,8 @@
  */
 #include <QList>
 #include <QListWidgetItem>
+#include <QEvent>
+#include "qtgui/retranslation.h"
 
 #include "remote_control_settings.h"
 #include "ui_remote_control_settings.h"
@@ -36,6 +38,16 @@ RemoteControlSettings::RemoteControlSettings(QWidget *parent) :
 RemoteControlSettings::~RemoteControlSettings()
 {
     delete ui;
+}
+
+void RemoteControlSettings::changeEvent(QEvent *event)
+{
+    QDialog::changeEvent(event);
+    if (event->type() == QEvent::LanguageChange)
+    {
+        RetranslationGuard guard(this);
+        ui->retranslateUi(this);
+    }
 }
 
 /*! \brief Set new network port.

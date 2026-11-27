@@ -34,6 +34,9 @@ class CNbOptions : public QDialog
 {
     Q_OBJECT
 
+protected:
+    void changeEvent(QEvent *event) override;
+
 public:
     explicit CNbOptions(QWidget *parent = 0);
     ~CNbOptions();

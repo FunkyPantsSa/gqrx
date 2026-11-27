@@ -20,11 +20,16 @@
  * the Free Software Foundation, Inc., 51 Franklin Street,
  * Boston, MA 02110-1301, USA.
  */
+#include "retranslation.h"
 #include <math.h>
 #include <QString>
 #include <QSettings>
 #include <QDebug>
 #include <QVariant>
+#include <QLayout>
+#include <QScrollBar>
+#include <QStyle>
+#include <algorithm>
 #include "dockfft.h"
 #include "ui_dockfft.h"
 
@@ -70,6 +75,12 @@ DockFft::DockFft(QWidget *parent) :
     ui(new Ui::DockFft)
 {
     ui->setupUi(this);
+    m_designerMinimumWidth = minimumWidth();
+    // Reserve space for every window name, including translated long names.
+    ui->fftWinComboBox->setSizeAdjustPolicy(QComboBox::AdjustToContents);
+    // Numeric frame rates are identifiers, independent of translated units.
+    for (int i = 0; i < ui->fftRateComboBox->count(); ++i)
+        ui->fftRateComboBox->setItemData(i, ui->fftRateComboBox->itemText(i).section(QLatin1Char(' '), 0, 0).toInt());
 
     m_sample_rate = 0.f;
     m_pand_last_modified = false;
@@ -77,12 +88,12 @@ DockFft::DockFft(QWidget *parent) :
     m_frame_dropping = false;
 
     // Add predefined gqrx colors to chooser.
-    ui->colorPicker->insertColor(QColor(0xFF,0xFF,0xFF,0xFF), "White");
-    ui->colorPicker->insertColor(QColor(0xFA,0xFA,0x7F,0xFF), "Yellow");
-    ui->colorPicker->insertColor(QColor(0x97,0xD0,0x97,0xFF), "Green");
-    ui->colorPicker->insertColor(QColor(0xFF,0xC8,0xC8,0xFF), "Pink");
-    ui->colorPicker->insertColor(QColor(0xB7,0xE0,0xFF,0xFF), "Blue");
-    ui->colorPicker->insertColor(QColor(0x7F,0xFA,0xFA,0xFF), "Cyan");
+    ui->colorPicker->insertColor(QColor(0xFF,0xFF,0xFF,0xFF), tr("White"));
+    ui->colorPicker->insertColor(QColor(0xFA,0xFA,0x7F,0xFF), tr("Yellow"));
+    ui->colorPicker->insertColor(QColor(0x97,0xD0,0x97,0xFF), tr("Green"));
+    ui->colorPicker->insertColor(QColor(0xFF,0xC8,0xC8,0xFF), tr("Pink"));
+    ui->colorPicker->insertColor(QColor(0xB7,0xE0,0xFF,0xFF), tr("Blue"));
+    ui->colorPicker->insertColor(QColor(0x7F,0xFA,0xFA,0xFF), tr("Cyan"));
 
     ui->cmapComboBox->addItem(tr("Gqrx"), "gqrx");
     ui->cmapComboBox->addItem(tr("Viridis"), "viridis");
@@ -96,6 +107,7 @@ DockFft::DockFft(QWidget *parent) :
     QFontMetrics metrics(font);
     QRectF zoomRect = metrics.boundingRect("888888x");
     ui->zoomLevelLabel->setFixedWidth(zoomRect.width());
+    updateMinimumWidth();
 }
 DockFft::~DockFft()
 {
@@ -105,24 +117,13 @@ DockFft::~DockFft()
 
 /**
  * @brief Get current FFT rate setting.
- * @return The current FFT rate in frames per second (always non-zero)
+ * @return The current FFT rate in frames per second (zero freezes the spectrum)
  */
 int DockFft::fftRate()
 {
-    bool ok;
-    int fps = 10;
-    QString strval = ui->fftRateComboBox->currentText();
-
-    strval.remove(" fps");
-    fps = strval.toInt(&ok, 10);
-
-    if (!ok)
-        qDebug() << "DockFft::fftRate : Could not convert" <<
-                    strval << "to number.";
-    else
-        qDebug() << "New FFT rate:" << fps << "Hz";
-
-    return fps;
+    bool ok = false;
+    const int fps = ui->fftRateComboBox->currentData().toInt(&ok);
+    return ok && fps >= 0 ? fps : DEFAULT_FFT_RATE;
 }
 
 /**
@@ -132,14 +133,8 @@ int DockFft::fftRate()
  */
 int DockFft::setFftRate(int fft_rate)
 {
-    int idx = -1;
-    QString rate_str = QString("%1 fps").arg(fft_rate);
-
-    qDebug() << __func__ << "to" << rate_str;
-
-    idx = ui->fftRateComboBox->findText(rate_str, Qt::MatchExactly);
-    if(idx != -1)
-        ui->fftRateComboBox->setCurrentIndex(idx);
+    const int idx = ui->fftRateComboBox->findData(fft_rate);
+    if (idx != -1) ui->fftRateComboBox->setCurrentIndex(idx);
 
     updateInfoLabels();
     return fftRate();
@@ -191,7 +186,7 @@ void DockFft::setSampleRate(float sample_rate)
 
 /**
  * @brief Get current FFT rate setting.
- * @return The current FFT rate in frames per second (always non-zero)
+ * @return The current FFT rate in frames per second (zero freezes the spectrum)
  */
 int DockFft::fftSize()
 {
@@ -554,14 +549,17 @@ void DockFft::setMarkersEnabled(bool enable)
 
 void DockFft::setActualFrameRate(float rate, bool dropping)
 {
+    m_actual_frame_rate = rate;
+    m_frame_dropping = dropping;
     if (dropping) {
-        ui->rateLabel->setText(">>> Rate");
+        ui->rateLabel->setText(tr(">>> Rate"));
         ui->rateLabel->setStyleSheet("QLabel { background-color : red; }");
     }
     else {
-        ui->rateLabel->setText("Rate");
+        ui->rateLabel->setText(tr("Rate"));
         ui->rateLabel->setStyleSheet("");
     }
+    updateMinimumWidth();
 }
 
 /** FFT size changed. */
@@ -599,9 +597,11 @@ void DockFft::on_wfSpanComboBox_currentIndexChanged(int index)
 /** Set waterfall time resolution. */
 void DockFft::setWfResolution(quint64 msec_per_line)
 {
+    m_wfResolution = msec_per_line;
     float res = 1.0e-3f * (float)msec_per_line;
 
-    ui->wfResLabel->setText(QString("Res: %1 s").arg((double)res, 0, 'f', 2));
+    ui->wfResLabel->setText(tr("Res: %1 s").arg((double)res, 0, 'f', 2));
+    updateMinimumWidth();
 }
 
 /**
@@ -772,18 +772,20 @@ void DockFft::updateInfoLabels(void)
     float   ovr;
     int     rate;
 
-    if (m_sample_rate == 0.f)
+    if (m_sample_rate == 0.f) {
+        updateMinimumWidth();
         return;
+    }
 
     size = fftSize();
 
     rbw = m_sample_rate / size;
     if (rbw < 1.e3f)
-        ui->fftRbwLabel->setText(QString("RBW: %1 Hz").arg((double)rbw, 0, 'f', 1));
+        ui->fftRbwLabel->setText(tr("RBW: %1 Hz").arg((double)rbw, 0, 'f', 1));
     else if (rbw < 1.e6f)
-        ui->fftRbwLabel->setText(QString("RBW: %1 kHz").arg(1.e-3 * (double)rbw, 0, 'f', 1));
+        ui->fftRbwLabel->setText(tr("RBW: %1 kHz").arg(1.e-3 * (double)rbw, 0, 'f', 1));
     else
-        ui->fftRbwLabel->setText(QString("RBW: %1 MHz").arg(1.e-6 * (double)rbw, 0, 'f', 1));
+        ui->fftRbwLabel->setText(tr("RBW: %1 MHz").arg(1.e-6 * (double)rbw, 0, 'f', 1));
 
     rate = fftRate();
     if (rate == 0)
@@ -797,5 +799,56 @@ void DockFft::updateInfoLabels(void)
         else
             ovr = 100 * (1.f - interval_samples / size);
     }
-    ui->fftOvrLabel->setText(QString("Overlap: %1%").arg((double)ovr, 0, 'f', 0));
+    ui->fftOvrLabel->setText(tr("Overlap: %1%").arg((double)ovr, 0, 'f', 0));
+    updateMinimumWidth();
+}
+
+void DockFft::updateMinimumWidth()
+{
+    // A scroll area does not propagate its content's minimum width to the
+    // dock. Horizontal scrolling is disabled here, so account for the full
+    // layout and a possible vertical scrollbar at any dock height.
+    auto *contents = ui->scrollAreaWidgetContents;
+    const auto layouts = contents->findChildren<QLayout *>();
+    for (auto *layout : layouts) layout->invalidate();
+    if (contents->layout()) contents->layout()->activate();
+
+    const int contentWidth = std::max(contents->minimumSizeHint().width(),
+                                     contents->layout()->minimumSize().width());
+    const int scrollbarWidth = std::max(ui->scrollArea->verticalScrollBar()->sizeHint().width(),
+                                       ui->scrollArea->style()->pixelMetric(QStyle::PM_ScrollBarExtent,
+                                                                           nullptr, ui->scrollArea));
+    const int scrollWidth = contentWidth + scrollbarWidth + 2 * ui->scrollArea->frameWidth();
+    if (ui->scrollArea->minimumWidth() != scrollWidth)
+        ui->scrollArea->setMinimumWidth(scrollWidth);
+
+    ui->dockWidgetContents->layout()->invalidate();
+    ui->dockWidgetContents->layout()->activate();
+    const int dockFrame = style()->pixelMetric(QStyle::PM_DockWidgetFrameWidth, nullptr, this);
+    const int dockWidth = std::max(m_designerMinimumWidth,
+                                  ui->dockWidgetContents->minimumSizeHint().width() + 2 * dockFrame);
+    if (minimumWidth() != dockWidth) setMinimumWidth(dockWidth);
+}
+
+void DockFft::changeEvent(QEvent *event)
+{
+    QDockWidget::changeEvent(event);
+    if (event->type() == QEvent::LanguageChange)
+    {
+        const QString zoomLevelLabelText = ui->zoomLevelLabel->text();
+        const QString wfResLabelText = ui->wfResLabel->text();
+        RetranslationGuard guard(this);
+        ui->retranslateUi(this);
+        toggleViewAction()->setText(windowTitle());
+        ui->zoomLevelLabel->setText(zoomLevelLabelText);
+        ui->wfResLabel->setText(wfResLabelText);
+        const char *colormaps[] = {"Gqrx", "Viridis", "Turbo", "Plasma", "Wht Cmp", "Wht Hot", "Blk Hot"};
+        for (int i = 0; i < ui->cmapComboBox->count(); ++i)
+            ui->cmapComboBox->setItemText(i, tr(colormaps[i]));
+        setActualFrameRate(m_actual_frame_rate, m_frame_dropping);
+        setWfResolution(m_wfResolution);
+        ui->colorPicker->retranslate();
+        updateInfoLabels();
+        updateMinimumWidth();
+    }
 }

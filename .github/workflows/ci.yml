@@ -42,12 +42,18 @@ jobs:
         run: |
           apt-get install -y \
             qt5-default \
+            qttools5-dev \
+            qttools5-dev-tools \
+            qttranslations5-l10n \
             libqt5svg5-dev
       - name: Install Qt6
         if: matrix.image != 'ubuntu:20.04'
         run: |
           apt-get install -y \
             qt6-base-dev \
+            qt6-tools-dev \
+            qt6-l10n-tools \
+            qt6-translations-l10n \
             libqt6svg6-dev \
             libqt6svgwidgets6 \
             libgl-dev
@@ -61,6 +67,9 @@ jobs:
       - name: Compile
         working-directory: build
         run: make -j4
+      - name: Test language switching and translations
+        working-directory: build
+        run: ctest --output-on-failure
       - name: Validate desktop entry
         run: desktop-file-validate dk.gqrx.gqrx.desktop
       - name: Validate appstream metadata
@@ -98,6 +107,10 @@ jobs:
       - name: Compile
         working-directory: build
         run: make -j4
+      - name: Test language switching and translations
+        working-directory: build
+        shell: bash -el {0}
+        run: ctest --output-on-failure
   windows-build:
     runs-on: windows-latest
     name: Windows CI
@@ -121,6 +134,8 @@ jobs:
           boost:p
           qt6-base:p
           qt6-svg:p
+          qt6-tools:p
+          qt6-translations:p
           spdlog:p
           volk:p
           libsndfile:p
@@ -163,3 +178,4 @@ jobs:
           -DCMAKE_INSTALL_PREFIX=C:/gqrx
         cmake --build build
         cmake --install build
+        ctest --test-dir build --output-on-failure

@@ -3,6 +3,8 @@
 add_source_files(SRCS_LIST
 	gqrx/gqrx.h
 	gqrx/main.cpp
+	gqrx/language_manager.cpp
+	gqrx/language_manager.h
 	gqrx/mainwindow.cpp
 	gqrx/mainwindow.h
 	gqrx/receiver.cpp
