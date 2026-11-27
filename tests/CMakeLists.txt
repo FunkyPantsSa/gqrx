@@ -41,6 +41,9 @@ target_link_libraries(language_switch_test ${TEST_QT_LIBRARIES} Volk::volk)
 add_dependencies(language_switch_test gqrx_translations)
 add_test(NAME language_switch COMMAND language_switch_test)
 set_tests_properties(language_switch PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
+add_test(NAME language_switch_fusion COMMAND language_switch_test)
+set_tests_properties(language_switch_fusion PROPERTIES
+    ENVIRONMENT "QT_QPA_PLATFORM=offscreen;QT_STYLE_OVERRIDE=fusion")
 
 find_package(Python3 QUIET COMPONENTS Interpreter)
 if(Python3_Interpreter_FOUND)

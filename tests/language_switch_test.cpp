@@ -12,6 +12,7 @@
 #include <QTemporaryDir>
 #include <QVariant>
 #include <iostream>
+#include <memory>
 #include <stdexcept>
 
 #include "applications/gqrx/language_manager.h"
@@ -130,14 +131,16 @@ int main(int argc, char **argv)
         const int bandCount = BandPlan::Get().size();
         Bookmarks::create();
         DXCSpots::create();
-        CPlotter plot;
-        plot.setSampleRate(2400000);
-        plot.setSpanFreq(2400000);
-        plot.setFftCenterFreq(10000);
-        require(plot.getFftCenterFreq() == 0, "Full bandwidth must have a valid zero pan range");
-        plot.setSpanFreq(1200000);
-        plot.setFftCenterFreq(1000000);
-        require(plot.getFftCenterFreq() == 599999, "Zoomed spectrum pan range changed");
+        // Like the application, keep the plotter's large histogram buffers
+        // on the heap; they exceed common Linux and Windows stack limits.
+        auto plot = std::make_unique<CPlotter>();
+        plot->setSampleRate(2400000);
+        plot->setSpanFreq(2400000);
+        plot->setFftCenterFreq(10000);
+        require(plot->getFftCenterFreq() == 0, "Full bandwidth must have a valid zero pan range");
+        plot->setSpanFreq(1200000);
+        plot->setFftCenterFreq(1000000);
+        require(plot->getFftCenterFreq() == 599999, "Zoomed spectrum pan range changed");
 
         for (const QString &selected : {QStringLiteral("zh_CN"), QStringLiteral("en"),
                                         QStringLiteral("zh_CN"), QStringLiteral("en"),
