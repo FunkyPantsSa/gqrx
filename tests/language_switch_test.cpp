@@ -196,7 +196,8 @@ int main(int argc, char **argv)
         CAgcOptions agc;
         CDemodOptions demod;
         CNbOptions blanker;
-        require(!agc.windowTitle().contains(QStringLiteral("Options")), "A new window was not translated");
+        require(agc.windowTitle() == QString::fromUtf8("自动增益控制设置"),
+                "A new window was not translated");
         capture(receiver, QStringLiteral("receiver_zh_CN"));
         capture(fft, QStringLiteral("fft_zh_CN"));
         capture(input, QStringLiteral("input_zh_CN"));

@@ -79,6 +79,17 @@ do
     if [ "$1" = "true" ]; then
         codesign --force --verify --verbose --timestamp --options runtime --entitlements /tmp/Entitlements.plist --sign "${IDENTITY}" "$f"
     else
-        codesign --remove-signature "$f"
+        # Apple Silicon requires a valid signature even for local builds.
+        # Ad-hoc signing needs no developer certificate or signing secrets.
+        codesign --force --sign - "$f"
     fi
 done
+
+# Re-sign the outer bundle after its nested binaries have been finalized, so
+# the resource seal describes the files that will actually be distributed.
+if [ "$1" = "true" ]; then
+    codesign --force --verbose --timestamp --options runtime --entitlements /tmp/Entitlements.plist --sign "${IDENTITY}" Gqrx.app
+else
+    codesign --force --sign - Gqrx.app
+fi
+codesign --verify --deep --strict --verbose=2 Gqrx.app
